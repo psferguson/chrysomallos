@@ -1,0 +1,2343 @@
+description: The DRP pipeline specialized for the HSC RC2 dataset.
+instrument: lsst.obs.subaru.HyperSuprimeCam
+parameters:
+  band: i
+tasks:
+  inject_coadd:
+    class: lsst.source.injection.inject_coadd.CoaddInjectTask
+    config:
+    - connections.input_exposure: deepCoadd
+      connections.output_exposure: injected_deepCoadd
+  isr:
+    class: lsst.ip.isr.IsrTask
+  characterizeImage:
+    class: lsst.pipe.tasks.characterizeImage.CharacterizeImageTask
+  calibrate:
+    class: lsst.pipe.tasks.calibrate.CalibrateTask
+  transformSourceTable:
+    class: lsst.pipe.tasks.postprocess.TransformSourceTableTask
+  consolidateSourceTable:
+    class: lsst.pipe.tasks.postprocess.ConsolidateSourceTableTask
+  consolidateVisitSummary:
+    class: lsst.pipe.tasks.postprocess.ConsolidateVisitSummaryTask
+  isolatedStarAssociation:
+    class: lsst.pipe.tasks.isolatedStarAssociation.IsolatedStarAssociationTask
+    config:
+    - connections.source_table_visit: preSourceTable_visit
+      band_order:
+      - i
+      - r
+      - z
+      - y
+      - g
+      - N921
+      - N816
+      - N1010
+      - N387
+      - N515
+    - band_order:
+      - i
+      - r
+      - g
+      - z
+      - y
+      - N921
+  finalizeCharacterization:
+    class: lsst.pipe.tasks.finalizeCharacterization.FinalizeCharacterizationTask
+  updateVisitSummary:
+    class: lsst.drp.tasks.update_visit_summary.UpdateVisitSummaryTask
+    config:
+    - wcs_provider: tract
+      photo_calib_provider: global
+      background_provider: replacement
+  makeCcdVisitTable:
+    class: lsst.pipe.tasks.postprocess.MakeCcdVisitTableTask
+  makeVisitTable:
+    class: lsst.pipe.tasks.postprocess.MakeVisitTableTask
+  makeWarp:
+    class: lsst.pipe.tasks.makeWarp.MakeWarpTask
+    config:
+    - makePsfMatched: true
+  assembleCoadd:
+    class: lsst.pipe.tasks.assembleCoadd.CompareWarpAssembleCoaddTask
+    config:
+    - doInputMap: true
+  healSparsePropertyMaps:
+    class: lsst.pipe.tasks.healSparseMapping.HealSparsePropertyMapTask
+    config:
+    - connections.dcr_e2_map_weighted_mean: injected_deepCoadd_dcr_e2_map_weighted_mean
+      connections.exposure_time_map_sum: injected_deepCoadd_exposure_time_map_sum
+      connections.epoch_map_min: injected_deepCoadd_epoch_map_min
+      connections.dcr_ddec_map_weighted_mean: injected_deepCoadd_dcr_ddec_map_weighted_mean
+      connections.psf_size_map_weighted_mean: injected_deepCoadd_psf_size_map_weighted_mean
+      connections.coadd_exposures: injected_deepCoadd
+      connections.sky_noise_map_weighted_mean: injected_deepCoadd_sky_noise_map_weighted_mean
+      connections.dcr_dra_map_weighted_mean: injected_deepCoadd_dcr_dra_map_weighted_mean
+      connections.epoch_map_mean: injected_deepCoadd_epoch_map_mean
+      connections.sky_background_map_weighted_mean: injected_deepCoadd_sky_background_map_weighted_mean
+      connections.dcr_e1_map_weighted_mean: injected_deepCoadd_dcr_e1_map_weighted_mean
+      connections.psf_maglim_map_weighted_mean: injected_deepCoadd_psf_maglim_map_weighted_mean
+      connections.psf_e2_map_weighted_mean: injected_deepCoadd_psf_e2_map_weighted_mean
+      connections.psf_e1_map_weighted_mean: injected_deepCoadd_psf_e1_map_weighted_mean
+      connections.epoch_map_max: injected_deepCoadd_epoch_map_max
+  consolidateHealSparsePropertyMaps:
+    class: lsst.pipe.tasks.healSparseMapping.ConsolidateHealSparsePropertyMapTask
+    config:
+    - connections.psf_size_consolidated_map_weighted_mean: injected_deepCoadd_psf_size_consolidated_map_weighted_mean
+      connections.dcr_e2_map_weighted_mean: injected_deepCoadd_dcr_e2_map_weighted_mean
+      connections.exposure_time_map_sum: injected_deepCoadd_exposure_time_map_sum
+      connections.psf_maglim_consolidated_map_weighted_mean: injected_deepCoadd_psf_maglim_consolidated_map_weighted_mean
+      connections.dcr_e1_consolidated_map_weighted_mean: injected_deepCoadd_dcr_e1_consolidated_map_weighted_mean
+      connections.sky_noise_consolidated_map_weighted_mean: injected_deepCoadd_sky_noise_consolidated_map_weighted_mean
+      connections.psf_e2_consolidated_map_weighted_mean: injected_deepCoadd_psf_e2_consolidated_map_weighted_mean
+      connections.dcr_ddec_consolidated_map_weighted_mean: injected_deepCoadd_dcr_ddec_consolidated_map_weighted_mean
+      connections.psf_e1_consolidated_map_weighted_mean: injected_deepCoadd_psf_e1_consolidated_map_weighted_mean
+      connections.dcr_e2_consolidated_map_weighted_mean: injected_deepCoadd_dcr_e2_consolidated_map_weighted_mean
+      connections.epoch_consolidated_map_mean: injected_deepCoadd_epoch_consolidated_map_mean
+      connections.exposure_time_consolidated_map_sum: injected_deepCoadd_exposure_time_consolidated_map_sum
+      connections.epoch_consolidated_map_max: injected_deepCoadd_epoch_consolidated_map_max
+      connections.epoch_map_min: injected_deepCoadd_epoch_map_min
+      connections.dcr_ddec_map_weighted_mean: injected_deepCoadd_dcr_ddec_map_weighted_mean
+      connections.psf_size_map_weighted_mean: injected_deepCoadd_psf_size_map_weighted_mean
+      connections.dcr_dra_consolidated_map_weighted_mean: injected_deepCoadd_dcr_dra_consolidated_map_weighted_mean
+      connections.sky_noise_map_weighted_mean: injected_deepCoadd_sky_noise_map_weighted_mean
+      connections.dcr_dra_map_weighted_mean: injected_deepCoadd_dcr_dra_map_weighted_mean
+      connections.epoch_map_mean: injected_deepCoadd_epoch_map_mean
+      connections.sky_background_map_weighted_mean: injected_deepCoadd_sky_background_map_weighted_mean
+      connections.dcr_e1_map_weighted_mean: injected_deepCoadd_dcr_e1_map_weighted_mean
+      connections.sky_background_consolidated_map_weighted_mean: injected_deepCoadd_sky_background_consolidated_map_weighted_mean
+      connections.epoch_consolidated_map_min: injected_deepCoadd_epoch_consolidated_map_min
+      connections.psf_maglim_map_weighted_mean: injected_deepCoadd_psf_maglim_map_weighted_mean
+      connections.psf_e2_map_weighted_mean: injected_deepCoadd_psf_e2_map_weighted_mean
+      connections.psf_e1_map_weighted_mean: injected_deepCoadd_psf_e1_map_weighted_mean
+      connections.epoch_map_max: injected_deepCoadd_epoch_map_max
+  detection:
+    class: lsst.pipe.tasks.multiBand.DetectCoaddSourcesTask
+    config:
+    - connections.outputSources: injected_deepCoadd_det
+      connections.outputExposure: injected_deepCoadd_calexp
+      connections.exposure: injected_deepCoadd
+      connections.outputBackgrounds: injected_deepCoadd_calexp_background
+  mergeDetections:
+    class: lsst.pipe.tasks.mergeDetections.MergeDetectionsTask
+    config:
+    - connections.catalogs: injected_deepCoadd_det
+      connections.outputCatalog: injected_deepCoadd_mergeDet
+  deblend:
+    class: lsst.pipe.tasks.deblendCoaddSourcesPipeline.DeblendCoaddSourcesMultiTask
+    config:
+    - connections.scarletModelData: injected_deepCoadd_scarletModelData
+      connections.coadds: injected_deepCoadd_calexp
+      connections.mergedDetections: injected_deepCoadd_mergeDet
+      connections.deblendedCatalog: injected_deepCoadd_deblendedCatalog
+  measure:
+    class: lsst.pipe.tasks.multiBand.MeasureMergedCoaddSourcesTask
+    config:
+    - connections.sourceTableHandles: preSourceTable_visit
+      connections.scarletModels: injected_deepCoadd_scarletModelData
+      connections.matchResult: injected_deepCoadd_measMatch
+      connections.scarletCatalog: injected_deepCoadd_deblendedCatalog
+      connections.outputSources: injected_deepCoadd_meas
+      connections.denormMatches: injected_deepCoadd_measMatchFull
+      connections.exposure: injected_deepCoadd_calexp
+  mergeMeasurements:
+    class: lsst.pipe.tasks.mergeMeasurements.MergeMeasurementsTask
+    config:
+    - connections.catalogs: injected_deepCoadd_meas
+      connections.mergedCatalog: injected_deepCoadd_ref
+  writeObjectTable:
+    class: lsst.pipe.tasks.postprocess.WriteObjectTableTask
+    config:
+    - connections.outputCatalog: injected_deepCoadd_obj
+      connections.inputCatalogRef: injected_deepCoadd_ref
+      connections.inputCatalogForcedSrc: injected_deepCoadd_forced_src
+      connections.inputCatalogMeas: injected_deepCoadd_meas
+  transformObjectTable:
+    class: lsst.pipe.tasks.postprocess.TransformObjectCatalogTask
+    config:
+    - connections.inputCatalog: injected_deepCoadd_obj
+      connections.outputCatalog: injected_objectTable
+  consolidateObjectTable:
+    class: lsst.pipe.tasks.postprocess.ConsolidateObjectTableTask
+    config:
+    - connections.outputCatalog: injected_objectTable_tract
+      connections.inputCatalogs: injected_objectTable
+  forcedPhotCcd:
+    class: lsst.meas.base.forcedPhotCcd.ForcedPhotCcdTask
+    config:
+    - connections.measCat: injected_forced_src
+      connections.refCat: injected_deepCoadd_ref
+  forcedPhotCoadd:
+    class: lsst.drp.tasks.forcedPhotCoadd.ForcedPhotCoaddTask
+    config:
+    - connections.scarletModels: injected_deepCoadd_scarletModelData
+      connections.refCatInBand: injected_deepCoadd_meas
+      connections.refCat: injected_deepCoadd_ref
+      connections.exposure: injected_deepCoadd_calexp
+      connections.measCat: injected_deepCoadd_forced_src
+  selectGoodSeeingVisits:
+    class: lsst.pipe.tasks.selectImages.BestSeeingQuantileSelectVisitsTask
+    config:
+    - connections.goodVisits: goodSeeingVisits
+  templateGen:
+    class: lsst.pipe.tasks.assembleCoadd.CompareWarpAssembleCoaddTask
+    config:
+    - doSelectVisits: true
+      assembleStaticSkyModel.doSelectVisits: true
+      connections.selectedVisits: goodSeeingVisits
+      connections.outputCoaddName: goodSeeing
+      connections.coaddExposure: goodSeeingCoadd
+  getTemplate:
+    class: lsst.ip.diffim.getTemplate.GetTemplateTask
+    config:
+    - connections.coaddName: goodSeeing
+      connections.coaddExposures: goodSeeingCoadd
+      connections.template: goodSeeingDiff_templateExp
+  subtractImages:
+    class: lsst.ip.diffim.subtractImages.AlardLuptonSubtractTask
+    config:
+    - connections.coaddName: goodSeeing
+      connections.template: goodSeeingDiff_templateExp
+      connections.difference: goodSeeingDiff_differenceTempExp
+      connections.matchedTemplate: goodSeeingDiff_matchedExp
+  detectAndMeasureDiaSources:
+    class: lsst.ip.diffim.detectAndMeasure.DetectAndMeasureTask
+    config:
+    - connections.coaddName: goodSeeing
+      connections.matchedTemplate: goodSeeingDiff_matchedExp
+      connections.difference: goodSeeingDiff_differenceTempExp
+      connections.subtractedMeasuredExposure: goodSeeingDiff_differenceExp
+  transformDiaSourceCat:
+    class: lsst.ap.association.TransformDiaSourceCatalogTask
+    config:
+    - doPackFlags: false
+      connections.coaddName: goodSeeing
+      connections.diaSourceSchema: goodSeeingDiff_diaSrc_schema
+      connections.diaSourceCat: goodSeeingDiff_diaSrc
+      connections.diffIm: goodSeeingDiff_differenceExp
+      connections.diaSourceTable: goodSeeingDiff_diaSrcTable
+  consolidateDiaSourceTable:
+    class: lsst.pipe.tasks.postprocess.ConsolidateSourceTableTask
+    config:
+    - connections.inputCatalogs: goodSeeingDiff_diaSrcTable
+      connections.outputCatalog: diaSourceTable
+  drpAssociation:
+    class: lsst.pipe.tasks.drpAssociationPipe.DrpAssociationPipeTask
+    config:
+    - connections.coaddName: goodSeeing
+      connections.diaSourceTables: goodSeeingDiff_diaSrcTable
+      connections.assocDiaSourceTable: goodSeeingDiff_assocDiaSrcTable
+      connections.diaObjectTable: goodSeeingDiff_diaObjTable
+  drpDiaCalculation:
+    class: lsst.pipe.tasks.drpDiaCalculationPipe.DrpDiaCalculationPipeTask
+    config:
+    - connections.coaddName: goodSeeing
+      connections.assocDiaSourceTable: goodSeeingDiff_assocDiaSrcTable
+      connections.diaObjectTable: goodSeeingDiff_diaObjTable
+      connections.fullDiaObjectTable: goodSeeingDiff_fullDiaObjTable
+  consolidateAssocDiaSourceTable:
+    class: lsst.pipe.tasks.postprocess.ConsolidateTractTask
+    config:
+    - connections.inputCatalogs: goodSeeingDiff_assocDiaSrcTable
+      connections.outputCatalog: diaSourceTable_tract
+  consolidateFullDiaObjectTable:
+    class: lsst.pipe.tasks.postprocess.ConsolidateTractTask
+    config:
+    - connections.inputCatalogs: goodSeeingDiff_fullDiaObjTable
+      connections.outputCatalog: diaObjectTable_tract
+  forcedPhotDiffim:
+    class: lsst.meas.base.ForcedPhotCcdTask
+    config:
+    - connections.measCat: forced_diff
+      connections.outputSchema: forced_diff_schema
+      connections.exposure: goodSeeingDiff_differenceExp
+    - connections.measCat: injected_forced_diff
+      connections.refCat: injected_deepCoadd_ref
+  writeForcedSourceTable:
+    class: lsst.pipe.tasks.postprocess.WriteForcedSourceTableTask
+    config:
+    - connections.inputCatalogDiff: injected_forced_diff
+      connections.inputCatalog: injected_forced_src
+      connections.outputCatalog: injected_mergedForcedSource
+  transformForcedSourceTable:
+    class: lsst.pipe.tasks.postprocess.TransformForcedSourceTableTask
+    config:
+    - connections.outputCatalog: injected_forcedSourceTable
+      connections.referenceCatalog: injected_objectTable
+      connections.inputCatalogs: injected_mergedForcedSource
+  consolidateForcedSourceTable:
+    class: lsst.pipe.tasks.postprocess.ConsolidateTractTask
+    config:
+    - connections.inputCatalogs: forcedSourceTable
+      connections.outputCatalog: forcedSourceTable_tract
+    - connections.outputCatalog: injected_forcedSourceTable_tract
+      connections.inputCatalogs: injected_forcedSourceTable
+  forcedPhotCcdOnDiaObjects:
+    class: lsst.meas.base.ForcedPhotCcdFromDataFrameTask
+  forcedPhotDiffOnDiaObjects:
+    class: lsst.meas.base.ForcedPhotCcdFromDataFrameTask
+    config:
+    - connections.measCat: forced_diff_diaObject
+      connections.outputSchema: forced_diff_diaObject_schema
+      connections.exposure: goodSeeingDiff_differenceExp
+  writeForcedSourceOnDiaObjectTable:
+    class: lsst.pipe.tasks.postprocess.WriteForcedSourceTableTask
+    config:
+    - key: diaObjectId
+      connections.inputCatalogDiff: forced_diff_diaObject
+      connections.inputCatalog: forced_src_diaObject
+      connections.outputCatalog: mergedForcedSourceOnDiaObject
+  transformForcedSourceOnDiaObjectTable:
+    class: lsst.pipe.tasks.postprocess.TransformForcedSourceTableTask
+    config:
+    - referenceColumns: []
+      keyRef: diaObjectId
+      key: forcedSourceOnDiaObjectId
+      connections.inputCatalogs: mergedForcedSourceOnDiaObject
+      connections.outputCatalog: forcedSourceOnDiaObjectTable
+      connections.referenceCatalog: goodSeeingDiff_fullDiaObjTable
+  consolidateForcedSourceOnDiaObjectTable:
+    class: lsst.pipe.tasks.postprocess.ConsolidateTractTask
+    config:
+    - connections.inputCatalogs: forcedSourceOnDiaObjectTable
+      connections.outputCatalog: forcedSourceOnDiaObjectTable_tract
+  skyCorr:
+    class: lsst.pipe.tasks.skyCorrection.SkyCorrectionTask
+  writePreSourceTable:
+    class: lsst.pipe.tasks.postprocess.WriteSourceTableTask
+    config:
+    - connections.outputCatalog: preSource
+  transformPreSourceTable:
+    class: lsst.pipe.tasks.postprocess.TransformSourceTableTask
+    config:
+    - connections.inputCatalog: preSource
+      connections.outputCatalog: preSourceTable
+  consolidatePreSourceTable:
+    class: lsst.pipe.tasks.postprocess.ConsolidateSourceTableTask
+    config:
+    - connections.inputCatalogs: preSourceTable
+      connections.outputCatalog: preSourceTable_visit
+  writeRecalibratedSourceTable:
+    class: lsst.pipe.tasks.postprocess.WriteRecalibratedSourceTableTask
+    config:
+    - connections.outputCatalog: source
+  matchCatalogsTract:
+    class: lsst.faro.preparation.TractMatchedPreparationTask
+  matchCatalogsTractMag17to21p5:
+    class: lsst.faro.preparation.TractMatchedPreparationTask
+    config:
+    - python: 'config.connections.outputCatalog = ''matchedCatalogTractMag17to21p5''
+
+        '
+      snrMin: 10
+      snrMax: 50000
+      brightMagCut: 17.0
+      faintMagCut: 21.5
+      selectExtended: false
+  matchCatalogsTractStarsSNR5to80:
+    class: lsst.faro.preparation.TractMatchedPreparationTask
+    config:
+    - python: 'config.connections.outputCatalog = ''matchedCatalogTractStarsSNR5to80''
+
+        '
+      snrMin: 5
+      snrMax: 80
+      selectExtended: false
+  matchCatalogsTractGxsSNR5to80:
+    class: lsst.faro.preparation.TractMatchedPreparationTask
+    config:
+    - python: 'config.connections.outputCatalog = ''matchedCatalogTractGxsSNR5to80''
+
+        '
+      snrMin: 5
+      snrMax: 80
+      selectExtended: true
+  matchCatalogsPatch:
+    class: lsst.faro.preparation.PatchMatchedPreparationTask
+  PA1:
+    class: lsst.faro.measurement.TractMatchedMeasurementTask
+    config:
+    - python: |
+        from lsst.faro.measurement import PA1Task
+        config.measure.retarget(PA1Task)
+      connections.package: validate_drp
+      connections.metric: PA1
+  PF1_design:
+    class: lsst.faro.measurement.TractMatchedMeasurementTask
+    config:
+    - python: |
+        from lsst.faro.measurement import PF1Task
+        config.measure.retarget(PF1Task)
+        config.measure.threshPA2 = 15.0
+      connections.package: validate_drp
+      connections.metric: PF1_design_gri
+  AM1:
+    class: lsst.faro.measurement.TractMatchedMeasurementTask
+    config:
+    - python: |
+        config.connections.matchedCatalog = 'matchedCatalogTractMag17to21p5'
+        from lsst.faro.measurement import AMxTask
+        config.measure.retarget(AMxTask)
+        config.measure.annulus_r = 5.0
+      connections.package: validate_drp
+      connections.metric: AM1
+  AM2:
+    class: lsst.faro.measurement.TractMatchedMeasurementTask
+    config:
+    - python: |
+        config.connections.matchedCatalog = 'matchedCatalogTractMag17to21p5'
+        from lsst.faro.measurement import AMxTask
+        config.measure.retarget(AMxTask)
+        config.measure.annulus_r = 20.0
+      connections.package: validate_drp
+      connections.metric: AM2
+  AM3:
+    class: lsst.faro.measurement.TractMatchedMeasurementTask
+    config:
+    - python: |
+        config.connections.matchedCatalog = 'matchedCatalogTractMag17to21p5'
+        from lsst.faro.measurement import AMxTask
+        config.measure.retarget(AMxTask)
+        config.measure.annulus_r = 200.0
+      connections.package: validate_drp
+      connections.metric: AM3
+  AD1_design:
+    class: lsst.faro.measurement.TractMatchedMeasurementTask
+    config:
+    - python: |
+        config.connections.matchedCatalog = 'matchedCatalogTractMag17to21p5'
+        from lsst.faro.measurement import ADxTask
+        config.measure.retarget(ADxTask)
+        config.measure.annulus_r = 5.0
+        config.measure.threshAD = 20.0
+        config.measure.threshAF = 10.0
+      connections.package: validate_drp
+      connections.metric: AD1_design
+  AD2_design:
+    class: lsst.faro.measurement.TractMatchedMeasurementTask
+    config:
+    - python: |
+        config.connections.matchedCatalog = 'matchedCatalogTractMag17to21p5'
+        from lsst.faro.measurement import ADxTask
+        config.measure.retarget(ADxTask)
+        config.measure.annulus_r = 20.0
+        config.measure.threshAD = 20.0
+        config.measure.threshAF = 10.0
+      connections.package: validate_drp
+      connections.metric: AD2_design
+  AD3_design:
+    class: lsst.faro.measurement.TractMatchedMeasurementTask
+    config:
+    - python: |
+        config.connections.matchedCatalog = 'matchedCatalogTractMag17to21p5'
+        from lsst.faro.measurement import ADxTask
+        config.measure.retarget(ADxTask)
+        config.measure.annulus_r = 200.0
+        config.measure.threshAD = 30.0
+        config.measure.threshAF = 10.0
+      connections.package: validate_drp
+      connections.metric: AD3_design
+  AF1_design:
+    class: lsst.faro.measurement.TractMatchedMeasurementTask
+    config:
+    - python: |
+        config.connections.matchedCatalog = 'matchedCatalogTractMag17to21p5'
+        from lsst.faro.measurement import AFxTask
+        config.measure.retarget(AFxTask)
+        config.measure.annulus_r = 5.0
+        config.measure.threshAD = 20.0
+        config.measure.threshAF = 10.0
+      connections.package: validate_drp
+      connections.metric: AF1_design
+  AF2_design:
+    class: lsst.faro.measurement.TractMatchedMeasurementTask
+    config:
+    - python: |
+        config.connections.matchedCatalog = 'matchedCatalogTractMag17to21p5'
+        from lsst.faro.measurement import AFxTask
+        config.measure.retarget(AFxTask)
+        config.measure.annulus_r = 20.0
+        config.measure.threshAD = 20.0
+        config.measure.threshAF = 10.0
+      connections.package: validate_drp
+      connections.metric: AF2_design
+  AF3_design:
+    class: lsst.faro.measurement.TractMatchedMeasurementTask
+    config:
+    - python: |
+        config.connections.matchedCatalog = 'matchedCatalogTractMag17to21p5'
+        from lsst.faro.measurement import AFxTask
+        config.measure.retarget(AFxTask)
+        config.measure.annulus_r = 200.0
+        config.measure.threshAD = 30.0
+        config.measure.threshAF = 10.0
+      connections.package: validate_drp
+      connections.metric: AF3_design
+  modelPhotRepGal1:
+    class: lsst.faro.measurement.TractMatchedMeasurementTask
+    config:
+    - python: |
+        config.connections.matchedCatalog = 'matchedCatalogTractGxsSNR5to80'
+        from lsst.faro.measurement import ModelPhotRepTask
+        config.measure.retarget(ModelPhotRepTask)
+        config.measure.index = 1
+        config.measure.selectExtended = True
+        config.measure.selectSnrMin = 5
+        config.measure.selectSnrMax = 10
+      connections.package: validate_drp
+      connections.metric: modelPhotRepGal1
+  modelPhotRepGal2:
+    class: lsst.faro.measurement.TractMatchedMeasurementTask
+    config:
+    - python: |
+        config.connections.matchedCatalog = 'matchedCatalogTractGxsSNR5to80'
+        from lsst.faro.measurement import ModelPhotRepTask
+        config.measure.retarget(ModelPhotRepTask)
+        config.measure.index = 2
+        config.measure.selectExtended = True
+        config.measure.selectSnrMin = 10
+        config.measure.selectSnrMax = 20
+      connections.package: validate_drp
+      connections.metric: modelPhotRepGal2
+  modelPhotRepGal3:
+    class: lsst.faro.measurement.TractMatchedMeasurementTask
+    config:
+    - python: |
+        config.connections.matchedCatalog = 'matchedCatalogTractGxsSNR5to80'
+        from lsst.faro.measurement import ModelPhotRepTask
+        config.measure.retarget(ModelPhotRepTask)
+        config.measure.index = 3
+        config.measure.selectExtended = True
+        config.measure.selectSnrMin = 20
+        config.measure.selectSnrMax = 40
+      connections.package: validate_drp
+      connections.metric: modelPhotRepGal3
+  modelPhotRepGal4:
+    class: lsst.faro.measurement.TractMatchedMeasurementTask
+    config:
+    - python: |
+        config.connections.matchedCatalog = 'matchedCatalogTractGxsSNR5to80'
+        from lsst.faro.measurement import ModelPhotRepTask
+        config.measure.retarget(ModelPhotRepTask)
+        config.measure.index = 4
+        config.measure.selectExtended = True
+        config.measure.selectSnrMin = 40
+        config.measure.selectSnrMax = 80
+      connections.package: validate_drp
+      connections.metric: modelPhotRepGal4
+  modelPhotRepStar1:
+    class: lsst.faro.measurement.TractMatchedMeasurementTask
+    config:
+    - python: |
+        config.connections.matchedCatalog = 'matchedCatalogTractStarsSNR5to80'
+        from lsst.faro.measurement import ModelPhotRepTask
+        config.measure.retarget(ModelPhotRepTask)
+        config.measure.index = 1
+        config.measure.selectExtended = False
+        config.measure.selectSnrMin = 5
+        config.measure.selectSnrMax = 10
+      connections.package: validate_drp
+      connections.metric: modelPhotRepStar1
+  modelPhotRepStar2:
+    class: lsst.faro.measurement.TractMatchedMeasurementTask
+    config:
+    - python: |
+        config.connections.matchedCatalog = 'matchedCatalogTractStarsSNR5to80'
+        from lsst.faro.measurement import ModelPhotRepTask
+        config.measure.retarget(ModelPhotRepTask)
+        config.measure.index = 2
+        config.measure.selectExtended = False
+        config.measure.selectSnrMin = 10
+        config.measure.selectSnrMax = 20
+      connections.package: validate_drp
+      connections.metric: modelPhotRepStar2
+  modelPhotRepStar3:
+    class: lsst.faro.measurement.TractMatchedMeasurementTask
+    config:
+    - python: |
+        config.connections.matchedCatalog = 'matchedCatalogTractStarsSNR5to80'
+        from lsst.faro.measurement import ModelPhotRepTask
+        config.measure.retarget(ModelPhotRepTask)
+        config.measure.index = 3
+        config.measure.selectExtended = False
+        config.measure.selectSnrMin = 20
+        config.measure.selectSnrMax = 40
+      connections.package: validate_drp
+      connections.metric: modelPhotRepStar3
+  modelPhotRepStar4:
+    class: lsst.faro.measurement.TractMatchedMeasurementTask
+    config:
+    - python: |
+        config.connections.matchedCatalog = 'matchedCatalogTractStarsSNR5to80'
+        from lsst.faro.measurement import ModelPhotRepTask
+        config.measure.retarget(ModelPhotRepTask)
+        config.measure.index = 4
+        config.measure.selectExtended = False
+        config.measure.selectSnrMin = 40
+        config.measure.selectSnrMax = 80
+      connections.package: validate_drp
+      connections.metric: modelPhotRepStar4
+  psfPhotRepStar1:
+    class: lsst.faro.measurement.TractMatchedMeasurementTask
+    config:
+    - python: |
+        config.connections.matchedCatalog = 'matchedCatalogTractStarsSNR5to80'
+        from lsst.faro.measurement import ModelPhotRepTask
+        config.measure.retarget(ModelPhotRepTask)
+        config.measure.index = 1
+        config.measure.selectExtended = False
+        config.measure.selectSnrMin = 5
+        config.measure.selectSnrMax = 10
+        config.measure.magName = "slot_PsfFlux_mag"
+      connections.package: validate_drp
+      connections.metric: psfPhotRepStar1
+  psfPhotRepStar2:
+    class: lsst.faro.measurement.TractMatchedMeasurementTask
+    config:
+    - python: |
+        config.connections.matchedCatalog = 'matchedCatalogTractStarsSNR5to80'
+        from lsst.faro.measurement import ModelPhotRepTask
+        config.measure.retarget(ModelPhotRepTask)
+        config.measure.index = 2
+        config.measure.selectExtended = False
+        config.measure.selectSnrMin = 10
+        config.measure.selectSnrMax = 20
+        config.measure.magName = "slot_PsfFlux_mag"
+      connections.package: validate_drp
+      connections.metric: psfPhotRepStar2
+  psfPhotRepStar3:
+    class: lsst.faro.measurement.TractMatchedMeasurementTask
+    config:
+    - python: |
+        config.connections.matchedCatalog = 'matchedCatalogTractStarsSNR5to80'
+        from lsst.faro.measurement import ModelPhotRepTask
+        config.measure.retarget(ModelPhotRepTask)
+        config.measure.index = 3
+        config.measure.selectExtended = False
+        config.measure.selectSnrMin = 20
+        config.measure.selectSnrMax = 40
+        config.measure.magName = "slot_PsfFlux_mag"
+      connections.package: validate_drp
+      connections.metric: psfPhotRepStar3
+  psfPhotRepStar4:
+    class: lsst.faro.measurement.TractMatchedMeasurementTask
+    config:
+    - python: |
+        config.connections.matchedCatalog = 'matchedCatalogTractStarsSNR5to80'
+        from lsst.faro.measurement import ModelPhotRepTask
+        config.measure.retarget(ModelPhotRepTask)
+        config.measure.index = 4
+        config.measure.selectExtended = False
+        config.measure.selectSnrMin = 40
+        config.measure.selectSnrMax = 80
+        config.measure.magName = "slot_PsfFlux_mag"
+      connections.package: validate_drp
+      connections.metric: psfPhotRepStar4
+  matchCatalogsPatchMultiBand:
+    class: lsst.faro.preparation.PatchMatchedMultiBandPreparationTask
+    config:
+    - snrMin: 10
+      snrMax: 50000
+      brightMagCut: 17.0
+      faintMagCut: 21.5
+      selectExtended: false
+  AB1:
+    class: lsst.faro.measurement.PatchMatchedMultiBandMeasurementTask
+    config:
+    - python: |
+        config.connections.matchedCatalogMulti = 'matchedCatalogPatchMultiBand'
+        from lsst.faro.measurement.MatchedCatalogMeasurementTasks import AB1Task
+        config.measure.retarget(AB1Task)
+      connections.package: validate_drp
+      connections.metric: AB1
+  nsrcMeasVisit:
+    class: lsst.faro.measurement.VisitMeasurementTask
+    config:
+    - python: |
+        from lsst.faro.base import NumSourcesMergeTask
+        config.measure.retarget(NumSourcesMergeTask)
+      connections.package: info
+      connections.metric: nsrcMeasVisit
+  TE3:
+    class: lsst.faro.measurement.VisitMeasurementTask
+    config:
+    - python: |
+        from lsst.faro.measurement import TExTask
+        config.measure.retarget(TExTask)
+        config.measure.minSep = 0.25
+        config.measure.maxSep = 5.0
+        config.measure.columnPsf = "slot_PsfShape"
+        config.measure.column = "slot_Shape"
+      connections.package: validate_drp
+      connections.metric: TE3
+  TE4:
+    class: lsst.faro.measurement.VisitMeasurementTask
+    config:
+    - python: |
+        from lsst.faro.measurement import TExTask
+        config.measure.retarget(TExTask)
+        config.measure.minSep = 5.0
+        config.measure.maxSep = 20.0
+        config.measure.columnPsf = "slot_PsfShape"
+        config.measure.column = "slot_Shape"
+      connections.package: validate_drp
+      connections.metric: TE4
+  TE1:
+    class: lsst.faro.measurement.TractMeasurementTask
+    config:
+    - python: |
+        from lsst.faro.measurement import TExTask
+        config.measure.retarget(TExTask)
+        config.measure.minSep = 0.25
+        config.measure.maxSep = 1.0
+        config.measure.shearConvention = False
+      connections.package: validate_drp
+      connections.metric: TE1
+    - connections.measurement: injected_metricvalue_validate_drp_TE1
+      connections.catalogs: injected_deepCoadd_meas
+  TE2:
+    class: lsst.faro.measurement.TractMeasurementTask
+    config:
+    - python: |
+        from lsst.faro.measurement import TExTask
+        config.measure.retarget(TExTask)
+        config.measure.minSep = 5.0
+        config.measure.maxSep = 20.0
+        config.measure.shearConvention = False
+      connections.package: validate_drp
+      connections.metric: TE2
+    - connections.measurement: injected_metricvalue_validate_drp_TE2
+      connections.catalogs: injected_deepCoadd_meas
+  skyObjectMean:
+    class: lsst.faro.measurement.TractTableMeasurementTask
+    config:
+    - python: |
+        from lsst.faro.measurement import FluxStatisticTask
+        import lsst.faro.utils.selectors as selectors
+        config.measure.retarget(FluxStatisticTask)
+        config.measure.columnsBand = {"flux": "ap09Flux"}
+        config.measure.selectorActions.FlagSelector=selectors.FlagSelector
+        config.measure.selectorActions.FlagSelector.selectWhenTrue=["sky_object"]
+        config.measure.selectorActions.PerBandFlagSelector=selectors.PerBandFlagSelector
+        config.measure.selectorActions.PerBandFlagSelector.selectWhenFalse=["pixelFlags_edge"]
+      measure.statistic: MEAN
+      connections.package: pipe_analysis
+      connections.metric: skyObjectMean_ap09Flux
+    - connections.measurement: injected_metricvalue_pipe_analysis_skyObjectMean_ap09Flux
+      connections.catalog: injected_objectTable_tract
+  skyObjectStd:
+    class: lsst.faro.measurement.TractTableMeasurementTask
+    config:
+    - python: |
+        from lsst.faro.measurement import FluxStatisticTask
+        import lsst.faro.utils.selectors as selectors
+        config.measure.retarget(FluxStatisticTask)
+        config.measure.columnsBand = {"flux": "ap09Flux"}
+        config.measure.selectorActions.FlagSelector=selectors.FlagSelector
+        config.measure.selectorActions.FlagSelector.selectWhenTrue=["sky_object"]
+        config.measure.selectorActions.PerBandFlagSelector=selectors.PerBandFlagSelector
+        config.measure.selectorActions.PerBandFlagSelector.selectWhenFalse=["pixelFlags_edge"]
+      measure.statistic: STDEV
+      connections.package: pipe_analysis
+      connections.metric: skyObjectStd_ap09Flux
+    - connections.measurement: injected_metricvalue_pipe_analysis_skyObjectStd_ap09Flux
+      connections.catalog: injected_objectTable_tract
+  wPerp:
+    class: lsst.faro.measurement.TractMultiBandMeasurementTask
+    config:
+    - python: |
+        from lsst.faro.measurement import WPerpTask
+        config.measure.retarget(WPerpTask)
+      connections.package: pipe_analysis
+      connections.metric: stellar_locus_width_wPerp
+    - connections.measurement: injected_metricvalue_pipe_analysis_stellar_locus_width_wPerp
+      connections.catalogs: injected_deepCoadd_forced_src
+  plot_e1_scatter_visit:
+    class: lsst.analysis.drp.scatterPlotVisit.ScatterPlotVisitTask
+    config:
+    - python: |
+        from lsst.analysis.drp.calcFunctors import CalcE1
+        config.axisLabels.update({"y": "E1: (i$_{xx}$ - i$_{yy}$)/(i$_{xx}$ + i$_{yy}$)"})
+      axisActions.yAction: CalcE1
+      axisActions.yAction.colXx: ixx
+      axisActions.yAction.colYy: iyy
+      connections.plotName: e1_ixx
+  plot_e1_sky_visit:
+    class: lsst.analysis.drp.skyPlotVisit.SkyPlotVisitTask
+    config:
+    - python: |
+        from lsst.analysis.drp.calcFunctors import CalcE1
+        config.axisLabels.update({"z": "E1: (i$_{xx}$ - i$_{yy}$)/(i$_{xx}$ + i$_{yy}$)"})
+      axisActions.zAction: CalcE1
+      axisActions.zAction.colXx: ixx
+      axisActions.zAction.colYy: iyy
+      connections.plotName: e1_ixx
+  plot_e2_scatter_visit:
+    class: lsst.analysis.drp.scatterPlotVisit.ScatterPlotVisitTask
+    config:
+    - python: |
+        from lsst.analysis.drp.calcFunctors import CalcE2
+        config.axisLabels.update({"y": "E2: 2i$_{xy}$/(i$_{xx}$ + i$_{yy}$)"})
+      axisActions.yAction: CalcE2
+      axisActions.yAction.colXx: ixx
+      axisActions.yAction.colYy: iyy
+      axisActions.yAction.colXy: ixy
+      connections.plotName: e2_ixx
+  plot_e2_sky_visit:
+    class: lsst.analysis.drp.skyPlotVisit.SkyPlotVisitTask
+    config:
+    - python: |
+        from lsst.analysis.drp.calcFunctors import CalcE2
+        config.axisLabels.update({"z": "E2: 2i$_{xy}$/(i$_{xx}$ + i$_{yy}$)"})
+      axisActions.zAction: CalcE2
+      axisActions.zAction.colXx: ixx
+      axisActions.zAction.colYy: iyy
+      axisActions.zAction.colXy: ixy
+      connections.plotName: e2_ixx
+  plot_shapeSize_scatter_visit:
+    class: lsst.analysis.drp.scatterPlotVisit.ScatterPlotVisitTask
+    config:
+    - python: |
+        from lsst.analysis.drp.calcFunctors import CalcShapeSize
+        config.axisLabels.update({"y": "Shape: (i$_{xx}$*i$_{yy}$ - i$_{xy}^2$)$^{1/4}$"})
+      axisActions.yAction: CalcShapeSize
+      axisActions.yAction.colXx: ixx
+      axisActions.yAction.colYy: iyy
+      axisActions.yAction.colXy: ixy
+      connections.plotName: shape_ixx
+  plot_shapeSize_sky_visit:
+    class: lsst.analysis.drp.skyPlotVisit.SkyPlotVisitTask
+    config:
+    - python: |
+        from lsst.analysis.drp.calcFunctors import CalcShapeSize
+        config.axisLabels.update({"z": "Shape: (i$_{xx}$*i$_{yy}$ - i$_{xy}^2$)$^{1/4}$"})
+      axisActions.zAction: CalcShapeSize
+      axisActions.zAction.colXx: ixx
+      axisActions.zAction.colYy: iyy
+      axisActions.zAction.colXy: ixy
+      connections.plotName: shape_ixx
+  plot_e1PSF_scatter_visit:
+    class: lsst.analysis.drp.scatterPlotVisit.ScatterPlotVisitTask
+    config:
+    - python: |
+        from lsst.analysis.drp.calcFunctors import CalcE1
+        config.axisLabels.update({"y": "E1: (i$_{xx}$PSF - i$_{yy}$PSF)/(i$_{xx}$PSF + i$_{yy}$PSF)"})
+      axisActions.yAction: CalcE1
+      axisActions.yAction.colXx: ixxPSF
+      axisActions.yAction.colYy: iyyPSF
+      connections.plotName: e1_ixxPSF
+  plot_e1PSF_sky_visit:
+    class: lsst.analysis.drp.skyPlotVisit.SkyPlotVisitTask
+    config:
+    - python: |
+        from lsst.analysis.drp.calcFunctors import CalcE1
+        config.axisLabels.update({"z": "E1: (i$_{xx}$PSF - i$_{yy}$PSF)/(i$_{xx}$PSF + i$_{yy}$PSF)"})
+      axisActions.zAction: CalcE1
+      axisActions.zAction.colXx: ixxPSF
+      axisActions.zAction.colYy: iyyPSF
+      connections.plotName: e1_ixxPSF
+  plot_e2PSF_sky_visit:
+    class: lsst.analysis.drp.skyPlotVisit.SkyPlotVisitTask
+    config:
+    - python: |
+        from lsst.analysis.drp.calcFunctors import CalcE2
+        config.axisLabels.update({"z": "E2: 2i$_{xy}$PSF/(i$_{xx}$PSF + i$_{yy}$PSF)"})
+      axisActions.zAction: CalcE2
+      axisActions.zAction.colXx: ixxPSF
+      axisActions.zAction.colYy: iyyPSF
+      axisActions.zAction.colXy: ixyPSF
+      connections.plotName: e2_ixxPSF
+  plot_e2PSF_scatter_visit:
+    class: lsst.analysis.drp.scatterPlotVisit.ScatterPlotVisitTask
+    config:
+    - python: |
+        from lsst.analysis.drp.calcFunctors import CalcE2
+        config.axisLabels.update({"y": "E2: 2i$_{xy}$PSF/(i$_{xx}$PSF + i$_{yy}$PSF)"})
+      axisActions.yAction: CalcE2
+      axisActions.yAction.colXx: ixxPSF
+      axisActions.yAction.colYy: iyyPSF
+      axisActions.yAction.colXy: ixyPSF
+      connections.plotName: e2_ixxPSF
+  plot_ellipResids_quiver_visit:
+    class: lsst.analysis.drp.quiverPlotVisit.QuiverPlotVisitTask
+    config:
+    - python: |
+        from lsst.analysis.drp.calcFunctors import CalcE, CalcEDiff
+        config.axisLabels.update({"z": "E Difference (e$_{MEAS}$ - e$_{PSF}$)"})
+      axisActions.zAction: CalcEDiff
+      axisActions.zAction.halvePhaseAngle: true
+      axisActions.zAction.colA: CalcE
+      axisActions.zAction.colA.colXx: ixx
+      axisActions.zAction.colA.colYy: iyy
+      axisActions.zAction.colA.colXy: ixy
+      axisActions.zAction.colA.halvePhaseAngle: false
+      axisActions.zAction.colB: CalcE
+      axisActions.zAction.colB.colXx: ixxPSF
+      axisActions.zAction.colB.colYy: iyyPSF
+      axisActions.zAction.colB.colXy: ixyPSF
+      axisActions.zAction.colB.halvePhaseAngle: false
+      connections.plotName: Ediff_ixxPSF
+  plot_shapeSizePSF_scatter_visit:
+    class: lsst.analysis.drp.scatterPlotVisit.ScatterPlotVisitTask
+    config:
+    - python: |
+        from lsst.analysis.drp.calcFunctors import CalcShapeSize
+        config.axisLabels.update({"y": "Shape: (i$_{xx}$PSF*i$_{yy}$PSF - i$_{xy}$PSF^2$)$^{1/4}$"})
+      axisActions.yAction: CalcShapeSize
+      axisActions.yAction.colXx: ixxPSF
+      axisActions.yAction.colYy: iyyPSF
+      axisActions.yAction.colXy: ixyPSF
+      connections.plotName: shape_ixxPSF
+  plot_shapeSizePSF_sky_visit:
+    class: lsst.analysis.drp.skyPlotVisit.SkyPlotVisitTask
+    config:
+    - python: |
+        from lsst.analysis.drp.calcFunctors import CalcShapeSize
+        config.axisLabels.update({"z": "Shape: (i$_{xx}$PSF*i$_{yy}$PSF - i$_{xy}$PSF$^2$)$^{1/4}$"})
+      axisActions.zAction: CalcShapeSize
+      axisActions.zAction.colXx: ixxPSF
+      axisActions.zAction.colYy: iyyPSF
+      axisActions.zAction.colXy: ixyPSF
+      connections.plotName: shape_ixxPSF
+  plot_shapeSizeDiff_scatter_visit:
+    class: lsst.analysis.drp.scatterPlotVisit.ScatterPlotVisitTask
+    config:
+    - python: |
+        from lsst.analysis.drp.calcFunctors import CalcShapeSize
+        from lsst.pipe.tasks.dataFrameActions import SubtractColumns
+        config.axisLabels.update({"y": "Shape Difference (i$_{xx}$ - i$_{xx}$PSF)"})
+      axisActions.yAction: SubtractColumns
+      axisActions.yAction.colA: CalcShapeSize
+      axisActions.yAction.colA.colXx: ixx
+      axisActions.yAction.colA.colYy: iyy
+      axisActions.yAction.colA.colXy: ixy
+      axisActions.yAction.colB: CalcShapeSize
+      axisActions.yAction.colB.colXx: ixxPSF
+      axisActions.yAction.colB.colYy: iyyPSF
+      axisActions.yAction.colB.colXy: ixyPSF
+      connections.plotName: shapeDiff_ixxPSF
+  plot_shapeSizeFractionalDiff_scatter_visit:
+    class: lsst.analysis.drp.scatterPlotVisit.ScatterPlotVisitTask
+    config:
+    - python: |
+        from lsst.analysis.drp.calcFunctors import CalcShapeSize
+        from lsst.pipe.tasks.dataFrameActions import FractionalDifferenceColumns
+        config.axisLabels.update({"y": "Fractional shape difference (i$_{xx}$ - i$_{xx}$PSF)"})
+      axisActions.yAction: FractionalDifferenceColumns
+      axisActions.yAction.colA: CalcShapeSize
+      axisActions.yAction.colA.colXx: ixx
+      axisActions.yAction.colA.colYy: iyy
+      axisActions.yAction.colA.colXy: ixy
+      axisActions.yAction.colB: CalcShapeSize
+      axisActions.yAction.colB.colXx: ixxPSF
+      axisActions.yAction.colB.colYy: iyyPSF
+      axisActions.yAction.colB.colXy: ixyPSF
+      connections.plotName: shapeFractionDiff_sizePSF_scatter
+  plot_E1Diff_scatter_visit:
+    class: lsst.analysis.drp.scatterPlotVisit.ScatterPlotVisitTask
+    config:
+    - python: |
+        from lsst.analysis.drp.calcFunctors import CalcE1
+        from lsst.pipe.tasks.dataFrameActions import SubtractColumns
+        config.axisLabels.update({"y": "E1 Difference (i$_{xx}$ - i$_{xx}$PSF)"})
+      axisActions.yAction: SubtractColumns
+      axisActions.yAction.colA: CalcE1
+      axisActions.yAction.colA.colXx: ixx
+      axisActions.yAction.colA.colYy: iyy
+      axisActions.yAction.colB: CalcE1
+      axisActions.yAction.colB.colXx: ixxPSF
+      axisActions.yAction.colB.colYy: iyyPSF
+      connections.plotName: E1Diff_ixxPSF
+  plot_E2Diff_scatter_visit:
+    class: lsst.analysis.drp.scatterPlotVisit.ScatterPlotVisitTask
+    config:
+    - python: |
+        from lsst.analysis.drp.calcFunctors import CalcE2
+        from lsst.pipe.tasks.dataFrameActions import SubtractColumns
+        config.axisLabels.update({"y": "E2 Difference (i$_{xx}$ - i$_{xx}$PSF)"})
+      axisActions.yAction: SubtractColumns
+      axisActions.yAction.colA: CalcE2
+      axisActions.yAction.colA.colXx: ixx
+      axisActions.yAction.colA.colYy: iyy
+      axisActions.yAction.colB: CalcE2
+      axisActions.yAction.colB.colXx: ixxPSF
+      axisActions.yAction.colB.colYy: iyyPSF
+      connections.plotName: E2Diff_ixxPSF
+  plot_E1Diff_sky_visit:
+    class: lsst.analysis.drp.skyPlotVisit.SkyPlotVisitTask
+    config:
+    - python: |
+        from lsst.analysis.drp.calcFunctors import CalcE1
+        from lsst.pipe.tasks.dataFrameActions import SubtractColumns
+        config.axisLabels.update({"z": "E1 Difference (i$_{xx}$ - i$_{xx}$PSF)"})
+      axisActions.zAction: SubtractColumns
+      axisActions.zAction.colA: CalcE1
+      axisActions.zAction.colA.colXx: ixx
+      axisActions.zAction.colA.colYy: iyy
+      axisActions.zAction.colB: CalcE1
+      axisActions.zAction.colB.colXx: ixxPSF
+      axisActions.zAction.colB.colYy: iyyPSF
+      connections.plotName: E1Diff_ixxPSF
+  plot_E2Diff_sky_visit:
+    class: lsst.analysis.drp.skyPlotVisit.SkyPlotVisitTask
+    config:
+    - python: |
+        from lsst.analysis.drp.calcFunctors import CalcE2
+        from lsst.pipe.tasks.dataFrameActions import SubtractColumns
+        config.axisLabels.update({"z": "E2 Difference (i$_{xx}$ - i$_{xx}$PSF)"})
+      axisActions.zAction: SubtractColumns
+      axisActions.zAction.colA: CalcE2
+      axisActions.zAction.colA.colXx: ixx
+      axisActions.zAction.colA.colYy: iyy
+      axisActions.zAction.colA.colXy: ixy
+      axisActions.zAction.colB: CalcE2
+      axisActions.zAction.colB.colXx: ixxPSF
+      axisActions.zAction.colB.colYy: iyyPSF
+      axisActions.zAction.colB.colXy: ixyPSF
+      connections.plotName: E2Diff_ixxPSF
+  plot_ShapeDiff_sky_visit:
+    class: lsst.analysis.drp.skyPlotVisit.SkyPlotVisitTask
+    config:
+    - python: |
+        from lsst.analysis.drp.calcFunctors import CalcShapeSize
+        from lsst.pipe.tasks.dataFrameActions import SubtractColumns
+        config.axisLabels.update({"z": "Size Difference (i$_{xx}$ - i$_{xx}$PSF)"})
+      axisActions.zAction: SubtractColumns
+      axisActions.zAction.colA: CalcShapeSize
+      axisActions.zAction.colA.colXx: ixx
+      axisActions.zAction.colA.colYy: iyy
+      axisActions.zAction.colA.colXy: ixy
+      axisActions.zAction.colB: CalcShapeSize
+      axisActions.zAction.colB.colXx: ixxPSF
+      axisActions.zAction.colB.colYy: iyyPSF
+      axisActions.zAction.colB.colXy: ixyPSF
+      connections.plotName: ShapeSizeDiff_ixxPSF
+  plot_CircAp12_sub_PSF_meas_sky_stars_visit:
+    class: lsst.analysis.drp.skyPlotVisit.SkyPlotVisitTask
+    config:
+    - connections.plotName: CircAp12_sub_PSF_meas_stars
+  plot_CircAp12_sub_PSF_meas_sky_gals_visit:
+    class: lsst.analysis.drp.skyPlotVisit.SkyPlotVisitTask
+    config:
+    - python: 'from lsst.analysis.drp.dataSelectors import GalaxyIdentifier
+
+        '
+      connections.plotName: CircAp12_sub_PSF_meas_gals
+      sourceSelectorActions.sourceSelector: GalaxyIdentifier
+      sourceSelectorActions.sourceSelector.band: ''
+  plot_CircAp12_sub_PSF_meas_calib_psf_used_sky_stars_visit:
+    class: lsst.analysis.drp.skyPlotVisit.SkyPlotVisitTask
+    config:
+    - python: 'from lsst.analysis.drp.dataSelectors import FlagSelector
+
+        '
+      connections.plotName: CircAp12_sub_PSF_meas_calib_psf_used_stars
+      selectorActions.calibPointSelector: FlagSelector
+      selectorActions.calibPointSelector.selectWhenTrue:
+      - calib_psf_used
+  plot_CircAp12_sub_PSF_meas_calib_psf_used_sky_gals_visit:
+    class: lsst.analysis.drp.skyPlotVisit.SkyPlotVisitTask
+    config:
+    - python: 'from lsst.analysis.drp.dataSelectors import FlagSelector, GalaxyIdentifier
+
+        '
+      connections.plotName: CircAp12_sub_PSF_meas_calib_psf_used_gals
+      selectorActions.calibPointSelector: FlagSelector
+      selectorActions.calibPointSelector.selectWhenTrue:
+      - calib_psf_used
+      sourceSelectorActions.sourceSelector: GalaxyIdentifier
+      sourceSelectorActions.sourceSelector.band: ''
+  plot_CircAp12_sub_PSF_calib_psf_used_sky_unknown_visit:
+    class: lsst.analysis.drp.skyPlotVisit.SkyPlotVisitTask
+    config:
+    - python: 'from lsst.analysis.drp.dataSelectors import FlagSelector, UnknownIdentifier
+
+        '
+      connections.plotName: CircAp12_sub_PSF_meas_calib_psf_used_unkowns
+      selectorActions.calibPointSelector: FlagSelector
+      selectorActions.calibPointSelector.selectWhenTrue:
+      - calib_psf_used
+      sourceSelectorActions.sourceSelector: UnknownIdentifier
+      sourceSelectorActions.sourceSelector.band: ''
+  plot_CircAp12_sub_PSF_meas_calib_psf_used_scatter_visit:
+    class: lsst.analysis.drp.scatterPlotVisit.ScatterPlotVisitTask
+    config:
+    - python: 'from lsst.analysis.drp.dataSelectors import FlagSelector, GalaxyIdentifier,
+        UnknownIdentifier
+
+        '
+      connections.plotName: CircAp12_sub_PSF_meas_calib_psf_used
+      selectorActions.calibPointSelector: FlagSelector
+      selectorActions.calibPointSelector.selectWhenTrue:
+      - calib_psf_used
+      sourceSelectorActions.update:
+        galaxySelector: GalaxyIdentifier
+        unknownSelector: UnknownIdentifier
+      sourceSelectorActions.galaxySelector.band: ''
+      sourceSelectorActions.unknownSelector.band: ''
+  plot_CircAp12_sub_PSF_all_scatter_visit:
+    class: lsst.analysis.drp.scatterPlotVisit.ScatterPlotVisitTask
+    config:
+    - python: 'from lsst.analysis.drp.dataSelectors import GalaxyIdentifier, UnknownIdentifier
+
+        '
+      connections.plotName: CircAp12_sub_PSF_all
+      sourceSelectorActions.update:
+        galaxySelector: GalaxyIdentifier
+        unknownSelector: UnknownIdentifier
+      sourceSelectorActions.galaxySelector.band: ''
+      sourceSelectorActions.unknownSelector.band: ''
+  plot_CircAp25_sub_PSF_all_scatter_visit:
+    class: lsst.analysis.drp.scatterPlotVisit.ScatterPlotVisitTask
+    config:
+    - python: |
+        from lsst.analysis.drp.dataSelectors import GalaxyIdentifier, UnknownIdentifier
+        config.axisActions.yAction.col1 = "ap25Flux"
+        config.axisLabels.update({"y": "{} - {} (mmag)".
+                                 format(config.axisActions.yAction.col1.removesuffix("Flux"),
+                                        config.axisActions.yAction.col2.removesuffix("Flux"))})
+      connections.plotName: CircAp25_sub_PSF_all
+      sourceSelectorActions.update:
+        galaxySelector: GalaxyIdentifier
+        unknownSelector: UnknownIdentifier
+      sourceSelectorActions.galaxySelector.band: ''
+      sourceSelectorActions.unknownSelector.band: ''
+  plot_CircAp12_sub_PSF_gals_scatter_visit:
+    class: lsst.analysis.drp.scatterPlotVisit.ScatterPlotVisitTask
+    config:
+    - python: 'from lsst.analysis.drp.dataSelectors import GalaxyIdentifier
+
+        '
+      connections.plotName: CircAp12_sub_PSF_gals
+      sourceSelectorActions.sourceSelector: GalaxyIdentifier
+      sourceSelectorActions.sourceSelector.band: ''
+  plot_CircAp25_sub_PSF_gals_scatter_visit:
+    class: lsst.analysis.drp.scatterPlotVisit.ScatterPlotVisitTask
+    config:
+    - python: |
+        from lsst.analysis.drp.dataSelectors import GalaxyIdentifier
+        config.axisActions.yAction.col1 = "ap25Flux"
+        config.axisLabels.update({"y": "{} - {} (mmag)".
+                                 format(config.axisActions.yAction.col1.removesuffix("Flux"),
+                                        config.axisActions.yAction.col2.removesuffix("Flux"))})
+      connections.plotName: CircAp25_sub_PSF_gals
+      sourceSelectorActions.sourceSelector: GalaxyIdentifier
+      sourceSelectorActions.sourceSelector.band: ''
+  plot_CircAp12_sub_PSF_meas_scatter_visit:
+    class: lsst.analysis.drp.scatterPlotVisit.ScatterPlotVisitTask
+    config:
+    - connections.plotName: CircAp12_sub_PSF_meas
+  plot_CircAp25_sub_PSF_meas_scatter_visit:
+    class: lsst.analysis.drp.scatterPlotVisit.ScatterPlotVisitTask
+    config:
+    - python: |
+        config.axisActions.yAction.col1 = "ap25Flux"
+        config.axisLabels.update({"y": "{} - {} (mmag)".
+                                 format(config.axisActions.yAction.col1.removesuffix("Flux"),
+                                        config.axisActions.yAction.col2.removesuffix("Flux"))})
+      connections.plotName: CircAp25_sub_PSF_meas
+  plot_PSFluxSN_meas_sky_all_visit:
+    class: lsst.analysis.drp.skyPlotVisit.SkyPlotVisitTask
+    config:
+    - python: |
+        from lsst.pipe.tasks.dataFrameActions import DivideColumns
+        config.axisLabels.update({"z": "S/N = psfFlux/psfFluxErr"})
+      axisActions.zAction: DivideColumns
+      axisActions.zAction.colA.column: psfFlux
+      axisActions.zAction.colB.column: psfFluxErr
+      connections.plotName: PSFluxSN_meas_all
+      sourceSelectorActions: None
+  plot_skyObject_sky_visit:
+    class: lsst.analysis.drp.skyPlotVisit.SkyPlotVisitTask
+    config:
+    - python: |
+        from lsst.analysis.drp.dataSelectors import FlagSelector
+        from lsst.pipe.tasks.dataFrameActions import SingleColumnAction
+        config.axisLabels.update({"z": "Sky Object: ap09Flux (nJy)"})
+      connections.plotName: skyObject
+      axisActions.zAction: SingleColumnAction
+      axisActions.zAction.column: ap09Flux
+      selectorActions.flagSelector: FlagSelector
+      selectorActions.flagSelector.selectWhenTrue:
+      - sky_source
+      selectorActions.remove:
+      - catSnSelector
+      sourceSelectorActions: None
+      statisticSelectorActions.statSelector.threshold: -1e12
+  plot_astromRefCat_sky_visit_dRA:
+    class: lsst.analysis.drp.skyPlotVisit.SkyPlotVisitTask
+    config:
+    - python: |
+        from lsst.analysis.drp.calcFunctors import AstromDiff
+        config.axisLabels.update({"z": "$RA_{target} - RA_{ref}$ (marcsec)"})
+      connections.plotName: astromRefCatResiduals_sky_ra_visit
+      connections.catPlot: sourceTable_visit_astrometryRefCat_match
+      axisActions.zAction: AstromDiff
+      axisActions.zAction.col1: coord_ra_target
+      axisActions.zAction.col2: coord_ra_ref
+      axisActions.xAction.column: coord_ra_ref
+      axisActions.yAction.column: coord_dec_ref
+      selectorActions.remove:
+      - catSnSelector
+  plot_astromRefCat_sky_visit_dDec:
+    class: lsst.analysis.drp.skyPlotVisit.SkyPlotVisitTask
+    config:
+    - python: |
+        from lsst.analysis.drp.calcFunctors import AstromDiff
+        config.axisLabels.update({"z": "$Dec_{target} - Dec_{ref}$ (marcsec)"})
+      connections.plotName: astromRefCatResiduals_sky_dec_visit
+      connections.catPlot: sourceTable_visit_astrometryRefCat_match
+      axisActions.zAction: AstromDiff
+      axisActions.zAction.col1: coord_dec_target
+      axisActions.zAction.col2: coord_dec_ref
+      axisActions.xAction.column: coord_ra_ref
+      axisActions.yAction.column: coord_dec_ref
+      selectorActions.remove:
+      - catSnSelector
+  plot_astromRefCat_scatter_visit_dRA:
+    class: lsst.analysis.drp.scatterPlotVisit.ScatterPlotVisitTask
+    config:
+    - python: |
+        from lsst.analysis.drp.calcFunctors import AstromDiff
+        config.axisLabels.update({"y": "$RA_{target} - RA_{ref}$ (marcsec)"})
+      connections.plotName: astromRefCatResiduals_scatter_ra_visit
+      connections.catPlot: sourceTable_visit_astrometryRefCat_match
+      axisActions.yAction: AstromDiff
+      axisActions.yAction.col1: coord_ra_target
+      axisActions.yAction.col2: coord_ra_ref
+      selectorActions.remove:
+      - catSnSelector
+  plot_astromRefCat_scatter_visit_dDec:
+    class: lsst.analysis.drp.scatterPlotVisit.ScatterPlotVisitTask
+    config:
+    - python: |
+        from lsst.analysis.drp.calcFunctors import AstromDiff
+        config.axisLabels.update({"y": "$Dec_{target} - Dec_{ref}$ (marcsec)"})
+      connections.plotName: astromRefCatResiduals_scatter_dec_visit
+      connections.catPlot: sourceTable_visit_astrometryRefCat_match
+      axisActions.yAction: AstromDiff
+      axisActions.yAction.col1: coord_dec_target
+      axisActions.yAction.col2: coord_dec_ref
+      selectorActions.remove:
+      - catSnSelector
+  plot_RhoStatistics_visit:
+    class: lsst.analysis.drp.rhoPlotVisit.RhoPlotVisitTask
+  match_astromRefCat_visit:
+    class: lsst.analysis.drp.catalogMatch.CatalogMatchVisitTask
+    config:
+    - python: 'from lsst.analysis.drp.dataSelectors import VisitPlotFlagSelector
+
+        '
+      selectorActions.flagSelector: VisitPlotFlagSelector
+      sourceSelectorActions.sourceSelector.band: ''
+  plot_CircAp12_sub_PSF_meas_sky_stars:
+    class: lsst.analysis.drp.skyPlot.SkyPlotTask
+    config:
+    - connections.plotName: CircAp12_sub_PSF_meas_stars_i
+      connections.skyPlot: injected_skyPlot_CircAp12_sub_PSF_meas_stars_i
+      connections.catPlot: injected_objectTable_tract
+  plot_CircAp12_sub_PSF_meas_sky_gals:
+    class: lsst.analysis.drp.skyPlot.SkyPlotTask
+    config:
+    - python: 'from lsst.analysis.drp.dataSelectors import GalaxyIdentifier
+
+        '
+      connections.plotName: CircAp12_sub_PSF_meas_gals_i
+      sourceSelectorActions.sourceSelector: GalaxyIdentifier
+    - connections.skyPlot: injected_skyPlot_CircAp12_sub_PSF_meas_gals_i
+      connections.catPlot: injected_objectTable_tract
+  plot_CircAp12_sub_PSF_meas_calib_psf_used_sky_all:
+    class: lsst.analysis.drp.skyPlot.SkyPlotTask
+    config:
+    - python: 'from lsst.analysis.drp.dataSelectors import FlagSelector
+
+        '
+      connections.plotName: CircAp12_sub_PSF_meas_calib_psf_used_all_i
+      sourceSelectorActions.update:
+        galaxySelector: GalaxyIdentifier
+        unknownSelector: UnknownIdentifier
+      selectorActions.calibPointSelector: FlagSelector
+      selectorActions.calibPointSelector.selectWhenTrue:
+      - i_calib_psf_used
+      fixAroundZero: true
+    - connections.skyPlot: injected_skyPlot_CircAp12_sub_PSF_meas_calib_psf_used_all_i
+      connections.catPlot: injected_objectTable_tract
+  plot_PSFFluxSN_meas_sky_all:
+    class: lsst.analysis.drp.skyPlot.SkyPlotTask
+    config:
+    - python: |
+        from lsst.pipe.tasks.dataFrameActions import DivideColumns
+        config.axisLabels.update({"z": "S/N = psfFlux/psfFluxErr"})
+      connections.plotName: PSFFluxSN_meas_all_i
+      axisActions.zAction: DivideColumns
+      axisActions.zAction.colA.column: i_psfFlux
+      axisActions.zAction.colB.column: i_psfFluxErr
+      sourceSelectorActions: None
+    - connections.skyPlot: injected_skyPlot_PSFFluxSN_meas_all_i
+      connections.catPlot: injected_objectTable_tract
+  plot_CModel_sub_PSFmag_meas_sky_galaxies:
+    class: lsst.analysis.drp.skyPlot.SkyPlotTask
+    config:
+    - python: |
+        from lsst.analysis.drp.dataSelectors import GalaxyIdentifier
+        config.axisLabels.update({"z": "CModel - PSF (mmag)"})
+      connections.plotName: CModel_sub_PSF_meas_galaxies_i
+      axisActions.zAction.col1: i_cModelFlux
+      sourceSelectorActions.sourceSelector: GalaxyIdentifier
+    - connections.skyPlot: injected_skyPlot_CModel_sub_PSF_meas_galaxies_i
+      connections.catPlot: injected_objectTable_tract
+  plot_CModel_sub_PSFmag_meas_sky_stars:
+    class: lsst.analysis.drp.skyPlot.SkyPlotTask
+    config:
+    - python: 'config.axisLabels.update({"z": "CModel - PSF (mmag)"})
+
+        '
+      connections.plotName: CModel_sub_PSF_meas_stars_i
+      axisActions.zAction.col1: i_cModelFlux
+      fixAroundZero: true
+    - connections.skyPlot: injected_skyPlot_CModel_sub_PSF_meas_stars_i
+      connections.catPlot: injected_objectTable_tract
+  plot_CircAp12_sub_PSF_meas_calib_psf_used_all_scatter:
+    class: lsst.analysis.drp.scatterPlot.ScatterPlotWithTwoHistsTask
+    config:
+    - python: 'from lsst.analysis.drp.dataSelectors import FlagSelector, GalaxyIdentifier,
+        UnknownIdentifier
+
+        '
+      connections.plotName: CircAp12_sub_PSF_meas_calib_psf_used_all_i
+      sourceSelectorActions.update:
+        galaxySelector: GalaxyIdentifier
+        unknownSelector: UnknownIdentifier
+      selectorActions.calibPointSelector: FlagSelector
+      selectorActions.calibPointSelector.selectWhenTrue:
+      - i_calib_psf_used
+    - connections.scatterPlot: injected_scatterTwoHistPlot_CircAp12_sub_PSF_meas_calib_psf_used_all_i
+      connections.catPlot: injected_objectTable_tract
+  plot_CircAp12_sub_PSF_meas_stars_scatter:
+    class: lsst.analysis.drp.scatterPlot.ScatterPlotWithTwoHistsTask
+    config:
+    - connections.plotName: CircAp12_sub_PSF_meas_stars_i
+      connections.scatterPlot: injected_scatterTwoHistPlot_CircAp12_sub_PSF_meas_stars_i
+      connections.catPlot: injected_objectTable_tract
+  plot_CircAp12_sub_PSF_meas_gals_scatter:
+    class: lsst.analysis.drp.scatterPlot.ScatterPlotWithTwoHistsTask
+    config:
+    - python: 'from lsst.analysis.drp.dataSelectors import GalaxyIdentifier
+
+        '
+      connections.plotName: CircAp12_sub_PSF_meas_gals_i
+      sourceSelectorActions.sourceSelector: GalaxyIdentifier
+    - connections.scatterPlot: injected_scatterTwoHistPlot_CircAp12_sub_PSF_meas_gals_i
+      connections.catPlot: injected_objectTable_tract
+  skyPlot_skyObject:
+    class: lsst.analysis.drp.skyPlot.SkyPlotTask
+    config:
+    - python: |
+        from lsst.analysis.drp.dataSelectors import FlagSelector
+        config.axisLabels.update({"z": "Sky Object i_ap09Flux (nJy)"})
+      connections.plotName: skyObject_i
+      axisActions.zAction: SingleColumnAction
+      axisActions.zAction.column: i_ap09Flux
+      selectorActions.flagSelector: FlagSelector
+      selectorActions.flagSelector.selectWhenTrue:
+      - sky_object
+      selectorActions.flagSelector.selectWhenFalse:
+      - i_pixelFlags_edge
+      selectorActions.remove:
+      - catSnSelector
+      sourceSelectorActions: None
+      statisticSelectorActions.statSelector.threshold: -1e12
+    - connections.skyPlot: injected_skyPlot_skyObject_i
+      connections.catPlot: injected_objectTable_tract
+  histPlot_skyObject:
+    class: lsst.analysis.drp.histPlot.HistPlotTask
+    config:
+    - python: |
+        from lsst.analysis.drp.dataSelectors import FlagSelector
+        from lsst.analysis.drp import calcFunctors
+        from lsst.pipe.tasks.dataFrameActions import SingleColumnAction
+        config.panels["panel1"] = HistPlotConfig
+        config.panels["panel1"].label = "Flux (nJy)"
+        config.panels["panel1"].actions.update = {
+          "hist1": SingleColumnAction(column="i_psfFlux"),
+          "hist2": SingleColumnAction(column="i_ap09Flux"),
+        }
+        config.panels["panel1"].histLabels = {
+          "hist1": "psfFlux",
+          "hist2": "ap09Flux",
+        }
+        config.panels["panel2"] = HistPlotConfig
+        config.panels["panel2"].label = "S/N"
+        config.panels["panel2"].actions.update = {
+          "hist1": calcFunctors.SNCalculator(
+            colA=SingleColumnAction(column="i_psfFlux"),
+            colB=SingleColumnAction(column="i_psfFluxErr"),),
+          "hist2": calcFunctors.SNCalculator(
+            colA=SingleColumnAction(column="i_ap09Flux"),
+            colB=SingleColumnAction(column="i_ap09FluxErr"),),
+        }
+        config.panels["panel2"].histLabels = {
+          "hist1": "psfFlux SN",
+          "hist2": "ap09Flux SN",
+        }
+      connections.plotName: skyObject_i
+      selectorActions.flagSelector: FlagSelector
+      selectorActions.flagSelector.selectWhenTrue:
+      - sky_object
+      selectorActions.flagSelector.selectWhenFalse:
+      - i_pixelFlags_edge
+    - connections.histPlot: injected_histPlot_skyObject_i
+      connections.catPlot: injected_objectTable_tract
+  plot_ri_gr_psf:
+    class: lsst.analysis.drp.colorColorPlot.ColorColorPlotTask
+    config:
+    - connections.plotName: ri_gr_psf
+      xLims: (-0.99, 2.4)
+      yLims: (-0.8, 2.8)
+      connections.colorColorPlot: injected_colorColorPlot_ri_gr_psf
+      connections.catPlot: injected_objectTable_tract
+  plot_ri_gr_cmodel:
+    class: lsst.analysis.drp.colorColorPlot.ColorColorPlotTask
+    config:
+    - python: |
+        config.fluxTypeForColor = "cModelFlux"
+        config.axisActions.zAction.column = "i_cModelFlux"
+        config.setConfigDependencies()
+      connections.plotName: ri_gr_cmodel
+      xLims: (-0.99, 2.4)
+      yLims: (-0.8, 2.8)
+    - connections.colorColorPlot: injected_colorColorPlot_ri_gr_cmodel
+      connections.catPlot: injected_objectTable_tract
+  plot_iz_ri_psf:
+    class: lsst.analysis.drp.colorColorPlot.ColorColorPlotTask
+    config:
+    - python: |
+        config.bands = {"band1": "r", "band2": "i", "band3": "z"}
+        config.setConfigDependencies()
+      connections.plotName: iz_ri_psf
+      xLims: (-1.2, 3.3)
+      yLims: (-0.99, 1.99)
+    - connections.colorColorPlot: injected_colorColorPlot_iz_ri_psf
+      connections.catPlot: injected_objectTable_tract
+  plot_astromRefCat_sky_tract_dRA:
+    class: lsst.analysis.drp.skyPlot.SkyPlotTask
+    config:
+    - python: |
+        from lsst.analysis.drp.calcFunctors import AstromDiff
+        config.axisLabels.update({"z": "$RA_{target} - RA_{ref}$ (marcsec)"})
+      connections.catPlot: objectTable_tract_astrometryRefCat_match
+      connections.plotName: astromRefCatResiduals_sky_ra_coadd_i
+      axisActions.zAction: AstromDiff
+      axisActions.zAction.col1: coord_ra_target
+      axisActions.zAction.col2: coord_ra_ref
+      axisActions.xAction.column: coord_ra_ref
+      axisActions.yAction.column: coord_dec_ref
+      selectorActions.remove:
+      - catSnSelector
+    - connections.skyPlot: injected_skyPlot_astromRefCatResiduals_sky_ra_coadd_i
+      connections.catPlot: injected_objectTable_tract_astrometryRefCat_match
+  plot_astromRefCat_sky_tract_dDec:
+    class: lsst.analysis.drp.skyPlot.SkyPlotTask
+    config:
+    - python: |
+        from lsst.analysis.drp.calcFunctors import AstromDiff
+        config.axisLabels.update({"z": "$Dec_{target} - Dec_{ref}$ (marcsec)"})
+      connections.catPlot: objectTable_tract_astrometryRefCat_match
+      connections.plotName: astromRefCatResiduals_sky_dec_coadd_i
+      axisActions.zAction: AstromDiff
+      axisActions.zAction.col1: coord_dec_target
+      axisActions.zAction.col2: coord_dec_ref
+      axisActions.xAction.column: coord_ra_ref
+      axisActions.yAction.column: coord_dec_ref
+      selectorActions.remove:
+      - catSnSelector
+    - connections.skyPlot: injected_skyPlot_astromRefCatResiduals_sky_dec_coadd_i
+      connections.catPlot: injected_objectTable_tract_astrometryRefCat_match
+  plot_astromRefCat_scatter_tract_dRA:
+    class: lsst.analysis.drp.scatterPlot.ScatterPlotWithTwoHistsTask
+    config:
+    - python: |
+        from lsst.analysis.drp.calcFunctors import AstromDiff
+        config.axisLabels.update({"y": "$RA_{target} - RA_{ref}$ (marcsec)"})
+      connections.catPlot: objectTable_tract_astrometryRefCat_match
+      connections.plotName: astromRefCatResiduals_scatter_ra_coadd_i
+      axisActions.yAction: AstromDiff
+      axisActions.yAction.col1: coord_ra_target
+      axisActions.yAction.col2: coord_ra_ref
+      selectorActions.remove:
+      - catSnSelector
+      highSnStatisticSelectorActions.statSelector.fluxType: psfFlux
+      lowSnStatisticSelectorActions.statSelector.fluxType: psfFlux
+    - connections.scatterPlot: injected_scatterTwoHistPlot_astromRefCatResiduals_scatter_ra_coadd_i
+      connections.catPlot: injected_objectTable_tract_astrometryRefCat_match
+  plot_astromRefCat_scatter_tract_dDec:
+    class: lsst.analysis.drp.scatterPlot.ScatterPlotWithTwoHistsTask
+    config:
+    - python: |
+        from lsst.analysis.drp.calcFunctors import AstromDiff
+        config.axisLabels.update({"y": "$Dec_{target} - Dec_{ref}$ (marcsec)"})
+      connections.catPlot: objectTable_tract_astrometryRefCat_match
+      connections.plotName: astromRefCatResiduals_scatter_dec_coadd_i
+      axisActions.yAction: AstromDiff
+      axisActions.yAction.col1: coord_dec_target
+      axisActions.yAction.col2: coord_dec_ref
+      selectorActions.remove:
+      - catSnSelector
+      highSnStatisticSelectorActions.statSelector.fluxType: psfFlux
+      lowSnStatisticSelectorActions.statSelector.fluxType: psfFlux
+    - connections.scatterPlot: injected_scatterTwoHistPlot_astromRefCatResiduals_scatter_dec_coadd_i
+      connections.catPlot: injected_objectTable_tract_astrometryRefCat_match
+  plot_E1Diff_scatter:
+    class: lsst.analysis.drp.scatterPlot.ScatterPlotWithTwoHistsTask
+    config:
+    - python: |
+        from lsst.analysis.drp.calcFunctors import CalcE1
+        from lsst.pipe.tasks.dataFrameActions import SubtractColumns
+        config.axisActions.xAction.column = "i_psfFlux"
+        config.axisActions.magAction.column = "i_psfFlux"
+        config.axisLabels.update({
+               "x": config.axisActions.xAction.column.removesuffix("Flux") + " (mag)",
+               "mag": config.axisActions.magAction.column.removesuffix("Flux") + " (mag)",
+               "y": "E1 Difference (e1 - e1$_{PSF}$)"})
+      axisActions.yAction: SubtractColumns
+      axisActions.yAction.colA: CalcE1
+      axisActions.yAction.colA.colXx: i_ixx
+      axisActions.yAction.colA.colYy: i_iyy
+      axisActions.yAction.colB: CalcE1
+      axisActions.yAction.colB.colXx: i_ixxPSF
+      axisActions.yAction.colB.colYy: i_iyyPSF
+      connections.plotName: E1Diff_scatter_i
+    - connections.scatterPlot: injected_scatterTwoHistPlot_E1Diff_scatter_i
+      connections.catPlot: injected_objectTable_tract
+  plot_E2Diff_scatter:
+    class: lsst.analysis.drp.scatterPlot.ScatterPlotWithTwoHistsTask
+    config:
+    - python: |
+        from lsst.analysis.drp.calcFunctors import CalcE2
+        from lsst.pipe.tasks.dataFrameActions import SubtractColumns
+        config.axisActions.xAction.column = "i_psfFlux"
+        config.axisActions.magAction.column = "i_psfFlux"
+        config.axisLabels.update({
+               "x": config.axisActions.xAction.column.removesuffix("Flux") + " (mag)",
+               "mag": config.axisActions.magAction.column.removesuffix("Flux") + " (mag)",
+               "y": "E2 Difference (e2 - e2$_{PSF}$)"})
+      axisActions.yAction: SubtractColumns
+      axisActions.yAction.colA: CalcE2
+      axisActions.yAction.colA.colXx: i_ixx
+      axisActions.yAction.colA.colYy: i_iyy
+      axisActions.yAction.colA.colXy: i_ixy
+      axisActions.yAction.colB: CalcE2
+      axisActions.yAction.colB.colXx: i_ixxPSF
+      axisActions.yAction.colB.colYy: i_iyyPSF
+      axisActions.yAction.colB.colXy: i_ixyPSF
+      connections.plotName: E2Diff_scatter_i
+    - connections.scatterPlot: injected_scatterTwoHistPlot_E2Diff_scatter_i
+      connections.catPlot: injected_objectTable_tract
+  plot_shapeSizeFractionalDiff_scatter:
+    class: lsst.analysis.drp.scatterPlot.ScatterPlotWithTwoHistsTask
+    config:
+    - python: |
+        from lsst.analysis.drp.calcFunctors import CalcShapeSize
+        from lsst.pipe.tasks.dataFrameActions import FractionalDifferenceColumns
+        config.axisActions.xAction.column = "i_psfFlux"
+        config.axisActions.magAction.column = "i_psfFlux"
+        config.axisLabels.update({
+               "x": config.axisActions.xAction.column.removesuffix("Flux") + " (mag)",
+               "mag": config.axisActions.magAction.column.removesuffix("Flux") + " (mag)",
+               "y": "Fractional size residuals (S/S$_{PSF}$ - 1)"})
+      axisActions.yAction: FractionalDifferenceColumns
+      axisActions.yAction.colA: CalcShapeSize
+      axisActions.yAction.colA.colXx: i_ixx
+      axisActions.yAction.colA.colYy: i_iyy
+      axisActions.yAction.colA.colXy: i_ixy
+      axisActions.yAction.colB: CalcShapeSize
+      axisActions.yAction.colB.colXx: i_ixxPSF
+      axisActions.yAction.colB.colYy: i_iyyPSF
+      axisActions.yAction.colB.colXy: i_ixyPSF
+      connections.plotName: ShapeSizeFractionDiff_scatter_i
+    - connections.scatterPlot: injected_scatterTwoHistPlot_ShapeSizeFractionDiff_scatter_i
+      connections.catPlot: injected_objectTable_tract
+  plot_E1Diff_sky:
+    class: lsst.analysis.drp.skyPlot.SkyPlotTask
+    config:
+    - python: |
+        from lsst.analysis.drp.calcFunctors import CalcE1
+        from lsst.pipe.tasks.dataFrameActions import SubtractColumns
+        config.axisLabels.update({"z": "E1 Difference (e1 - e1$_{PSF}$)"})
+      axisActions.zAction: SubtractColumns
+      axisActions.zAction.colA: CalcE1
+      axisActions.zAction.colA.colXx: i_ixx
+      axisActions.zAction.colA.colYy: i_iyy
+      axisActions.zAction.colB: CalcE1
+      axisActions.zAction.colB.colXx: i_ixxPSF
+      axisActions.zAction.colB.colYy: i_iyyPSF
+      connections.plotName: E1Diff_sky_i
+      fixAroundZero: true
+    - connections.skyPlot: injected_skyPlot_E1Diff_sky_i
+      connections.catPlot: injected_objectTable_tract
+  plot_E2Diff_sky:
+    class: lsst.analysis.drp.skyPlot.SkyPlotTask
+    config:
+    - python: |
+        from lsst.analysis.drp.calcFunctors import CalcE2
+        from lsst.pipe.tasks.dataFrameActions import SubtractColumns
+        config.axisLabels.update({"z": "E2 Difference (e2 - e2$_{PSF}$)"})
+      axisActions.zAction: SubtractColumns
+      axisActions.zAction.colA: CalcE2
+      axisActions.zAction.colA.colXx: i_ixx
+      axisActions.zAction.colA.colYy: i_iyy
+      axisActions.zAction.colA.colXy: i_ixy
+      axisActions.zAction.colB: CalcE2
+      axisActions.zAction.colB.colXx: i_ixxPSF
+      axisActions.zAction.colB.colYy: i_iyyPSF
+      axisActions.zAction.colB.colXy: i_ixyPSF
+      connections.plotName: E2Diff_sky_i
+      fixAroundZero: true
+    - connections.skyPlot: injected_skyPlot_E2Diff_sky_i
+      connections.catPlot: injected_objectTable_tract
+  plot_shapeSizeFractionalDiff_sky:
+    class: lsst.analysis.drp.skyPlot.SkyPlotTask
+    config:
+    - python: |
+        from lsst.analysis.drp.calcFunctors import CalcShapeSize
+        from lsst.pipe.tasks.dataFrameActions import FractionalDifferenceColumns
+        config.axisLabels.update({"z": "Fractional Size Residual (S/S$_{PSF}$ - 1)"})
+      axisActions.zAction: FractionalDifferenceColumns
+      axisActions.zAction.colA: CalcShapeSize
+      axisActions.zAction.colA.colXx: i_ixx
+      axisActions.zAction.colA.colYy: i_iyy
+      axisActions.zAction.colA.colXy: i_ixy
+      axisActions.zAction.colB: CalcShapeSize
+      axisActions.zAction.colB.colXx: i_ixxPSF
+      axisActions.zAction.colB.colYy: i_iyyPSF
+      axisActions.zAction.colB.colXy: i_ixyPSF
+      connections.plotName: ShapeSizeFractionDiff_sky_i
+      fixAroundZero: true
+    - connections.skyPlot: injected_skyPlot_ShapeSizeFractionDiff_sky_i
+      connections.catPlot: injected_objectTable_tract
+  plot_E1Diff_magDiff_scatter:
+    class: lsst.analysis.drp.scatterPlot.ScatterPlotWithTwoHistsTask
+    config:
+    - python: |
+        from lsst.analysis.drp.calcFunctors import CalcE1, MagDiff
+        from lsst.pipe.tasks.dataFrameActions import SubtractColumns
+        config.axisActions.xAction = MagDiff
+        config.axisActions.xAction.col1 = "i_cModelFlux"
+        config.axisActions.xAction.col2 = "i_psfFlux"
+        config.axisActions.magAction.column = "i_psfFlux"
+        config.axisLabels.update({
+               "x": config.axisActions.xAction.col1.removesuffix("Flux") + " - "
+                    + config.axisActions.xAction.col2.removesuffix("Flux") + " (mag)",
+               "mag": config.axisActions.magAction.column.removesuffix("Flux") + " (mag)",
+               "y": "E1 Difference (e1 - e1$_{PSF}$)"})
+      axisActions.xAction.returnMillimags: true
+      axisActions.yAction: SubtractColumns
+      axisActions.yAction.colA: CalcE1
+      axisActions.yAction.colA.colXx: i_ixx
+      axisActions.yAction.colA.colYy: i_iyy
+      axisActions.yAction.colB: CalcE1
+      axisActions.yAction.colB.colXx: i_ixxPSF
+      axisActions.yAction.colB.colYy: i_iyyPSF
+      highSnStatisticSelectorActions: None
+      lowSnStatisticSelectorActions: None
+      connections.plotName: E1Diff_magDiff_i
+    - connections.scatterPlot: injected_scatterTwoHistPlot_E1Diff_magDiff_i
+      connections.catPlot: injected_objectTable_tract
+  plot_E2Diff_magDiff_scatter:
+    class: lsst.analysis.drp.scatterPlot.ScatterPlotWithTwoHistsTask
+    config:
+    - python: |
+        from lsst.analysis.drp.calcFunctors import CalcE2, MagDiff
+        from lsst.pipe.tasks.dataFrameActions import SubtractColumns
+        config.axisActions.xAction = MagDiff
+        config.axisActions.xAction.col1 = "i_cModelFlux"
+        config.axisActions.xAction.col2 = "i_psfFlux"
+        config.axisActions.magAction.column = "i_psfFlux"
+        config.axisLabels.update({
+               "x": config.axisActions.xAction.col1.removesuffix("Flux") + " - "
+                    + config.axisActions.xAction.col2.removesuffix("Flux") + " (mag)",
+               "mag": config.axisActions.magAction.column.removesuffix("Flux") + " (mag)",
+               "y": "E2 Difference (e2 - e2$_{PSF}$)"})
+      axisActions.yAction: SubtractColumns
+      axisActions.yAction.colA: CalcE2
+      axisActions.yAction.colA.colXx: i_ixx
+      axisActions.yAction.colA.colYy: i_iyy
+      axisActions.yAction.colA.colXy: i_ixy
+      axisActions.yAction.colB: CalcE2
+      axisActions.yAction.colB.colXx: i_ixxPSF
+      axisActions.yAction.colB.colYy: i_iyyPSF
+      axisActions.yAction.colB.colXy: i_ixyPSF
+      highSnStatisticSelectorActions: None
+      lowSnStatisticSelectorActions: None
+      connections.plotName: E2Diff_magDiff_i
+    - connections.scatterPlot: injected_scatterTwoHistPlot_E2Diff_magDiff_i
+      connections.catPlot: injected_objectTable_tract
+  plot_shapeSizeFractionalDiff_magDiff_scatter:
+    class: lsst.analysis.drp.scatterPlot.ScatterPlotWithTwoHistsTask
+    config:
+    - python: |
+        from lsst.analysis.drp.calcFunctors import CalcShapeSize, MagDiff
+        from lsst.pipe.tasks.dataFrameActions import FractionalDifferenceColumns
+        config.axisActions.xAction = MagDiff
+        config.axisActions.xAction.col1 = "i_cModelFlux"
+        config.axisActions.xAction.col2 = "i_psfFlux"
+        config.axisActions.magAction.column = "i_psfFlux"
+        config.axisLabels.update({
+               "x": config.axisActions.xAction.col1.removesuffix("Flux") + " - "
+                    + config.axisActions.xAction.col2.removesuffix("Flux") + " (mag)",
+               "mag": config.axisActions.magAction.column.removesuffix("Flux") + " (mag)",
+               "y": "Fractional size residuals (S/S$_{PSF}$ - 1)"})
+      axisActions.yAction: FractionalDifferenceColumns
+      axisActions.yAction.colA: CalcShapeSize
+      axisActions.yAction.colA.colXx: i_ixx
+      axisActions.yAction.colA.colYy: i_iyy
+      axisActions.yAction.colA.colXy: i_ixy
+      axisActions.yAction.colB: CalcShapeSize
+      axisActions.yAction.colB.colXx: i_ixxPSF
+      axisActions.yAction.colB.colYy: i_iyyPSF
+      axisActions.yAction.colB.colXy: i_ixyPSF
+      highSnStatisticSelectorActions: None
+      lowSnStatisticSelectorActions: None
+      connections.plotName: ShapeSizeFractionDiff_magDiff_scatter_i
+    - connections.scatterPlot: injected_scatterTwoHistPlot_ShapeSizeFractionDiff_magDiff_scatter_i
+      connections.catPlot: injected_objectTable_tract
+  plot_RhoStatistics:
+    class: lsst.analysis.drp.rhoPlot.RhoPlotTask
+    config:
+    - rhoStatisticsAction.treecorr.max_sep: 100
+      connections.rho4Plot: injected_rho4Plot_deltaCoords
+      connections.rho2Plot: injected_rho2Plot_deltaCoords
+      connections.catPlot: injected_objectTable_tract
+      connections.rho5Plot: injected_rho5Plot_deltaCoords
+      connections.rho3Plot: injected_rho3Plot_deltaCoords
+      connections.rho0Plot: injected_rho0Plot_deltaCoords
+      connections.rho1Plot: injected_rho1Plot_deltaCoords
+  plot_wFit_PSF:
+    class: lsst.analysis.drp.colorColorFitPlot.ColorColorFitPlotTask
+    config:
+    - connections.plotName: wFit_PSF
+      connections.colorColorFitPlot: injected_colorColorFitPlot_wFit_PSF
+      connections.catPlot: injected_objectTable_tract
+  plot_wFit_CModel:
+    class: lsst.analysis.drp.colorColorFitPlot.ColorColorFitPlotTask
+    config:
+    - python: |
+        config.fluxTypeForColor = "cModelFlux"
+        config.setConfigDependencies()
+      connections.plotName: wFit_CModel
+    - connections.colorColorFitPlot: injected_colorColorFitPlot_wFit_CModel
+      connections.catPlot: injected_objectTable_tract
+  plot_xFit_PSF:
+    class: lsst.analysis.drp.colorColorFitPlot.ColorColorFitPlotTask
+    config:
+    - connections.plotName: xFit_PSF
+      stellarLocusFitDict:
+        xMin: 1.05
+        xMax: 1.55
+        yMin: 0.78
+        yMax: 1.62
+        mHW: 13.35
+        bHW: -15.54
+      connections.colorColorFitPlot: injected_colorColorFitPlot_xFit_PSF
+      connections.catPlot: injected_objectTable_tract
+  plot_xFit_CModel:
+    class: lsst.analysis.drp.colorColorFitPlot.ColorColorFitPlotTask
+    config:
+    - python: |
+        config.fluxTypeForColor = "cModelFlux"
+        config.setConfigDependencies()
+      connections.plotName: xFit_CModel
+      stellarLocusFitDict:
+        xMin: 1.05
+        xMax: 1.55
+        yMin: 0.78
+        yMax: 1.62
+        mHW: 13.35
+        bHW: -15.54
+    - connections.colorColorFitPlot: injected_colorColorFitPlot_xFit_CModel
+      connections.catPlot: injected_objectTable_tract
+  plot_yFit_PSF:
+    class: lsst.analysis.drp.colorColorFitPlot.ColorColorFitPlotTask
+    config:
+    - python: |
+        config.bands = {"band1": "r", "band2": "i", "band3": "z"}
+        config.setConfigDependencies()
+      connections.plotName: yFit_PSF
+      axisActions.magAction.column: i_psfFlux
+      stellarLocusFitDict:
+        xMin: 0.82
+        xMax: 2.01
+        yMin: 0.37
+        yMax: 0.9
+        mHW: 0.4
+        bHW: 0.03
+      xLims: (-0.8, 3.2)
+      yLims: (-0.5, 1.4)
+    - connections.colorColorFitPlot: injected_colorColorFitPlot_yFit_PSF
+      connections.catPlot: injected_objectTable_tract
+  plot_yFit_CModel:
+    class: lsst.analysis.drp.colorColorFitPlot.ColorColorFitPlotTask
+    config:
+    - python: |
+        config.fluxTypeForColor = "cModelFlux"
+        config.bands = {"band1": "r", "band2": "i", "band3": "z"}
+        config.setConfigDependencies()
+      connections.plotName: yFit_CModel
+      stellarLocusFitDict:
+        xMin: 0.82
+        xMax: 2.01
+        yMin: 0.37
+        yMax: 0.9
+        mHW: 0.4
+        bHW: 0.03
+      xLims: (-0.8, 3.2)
+      yLims: (-0.5, 1.4)
+    - connections.colorColorFitPlot: injected_colorColorFitPlot_yFit_CModel
+      connections.catPlot: injected_objectTable_tract
+  match_astromRefCat_objectTable:
+    class: lsst.analysis.drp.catalogMatch.CatalogMatchTask
+    config:
+    - connections.matchCatalog: injected_objectTable_tract_astrometryRefCat_match
+      connections.catalog: injected_objectTable_tract
+  validateObjectTableCore:
+    class: lsst.analysis.tools.tasks.ObjectTableTractAnalysisTask
+    config:
+    - python: |
+        from lsst.analysis.tools.atools import *
+        from lsst.analysis.tools.contexts import *
+      connections.outputName: objectTableColumnValidate
+      atools.validPsfFluxMetric: ValidFracColumnMetric
+      atools.validPsfFluxMetric.vectorKey: psfFlux
+      atools.validPsfFluxMetric.applyContext: CoaddContext
+      atools.validCmodelFluxMetric: ValidFracColumnMetric
+      atools.validCmodelFluxMetric.vectorKey: cModelFlux
+      atools.validCmodelFluxMetric.applyContext: CoaddContext
+    - connections.outputName: injected_objectTableColumnValidate
+  analyzeObjectTableCore:
+    class: lsst.analysis.tools.tasks.ObjectTableTractAnalysisTask
+    config:
+    - python: |
+        from lsst.analysis.tools.atools import *
+        from lsst.analysis.tools.contexts import *
+      connections.outputName: objectTableCore
+      atools.shapeSizeFractionalDiff: ShapeSizeFractionalDiff
+      atools.e1Diff: E1Diff
+      atools.e2Diff: E2Diff
+      atools.skyFluxStatisticMetric: SkyFluxStatisticMetric
+      atools.skyFluxStatisticMetric.applyContext: CoaddContext
+      atools.wPerpPSFP: WPerpPSF
+      atools.wPerpCModel: WPerpCModel
+      atools.xPerpPSFP: XPerpPSF
+      atools.xPerpCModel: XPerpCModel
+      atools.yPerpPSF: YPerpPSF
+      atools.yPerpCModel: YPerpCModel
+      atools.skyObjectSky: SkyObjectSkyPlot
+      atools.skyObjectFlux: SkyObjectHistPlot
+    - connections.outputName: injected_objectTableCore
+  analyzeObjectTableSurveyCore:
+    class: lsst.analysis.tools.tasks.ObjectTableSurveyAnalysisTask
+    config:
+    - python: |
+        from lsst.analysis.tools.atools import *
+        from lsst.analysis.tools.contexts import *
+        from lsst.analysis.tools.actions.plot import *
+      connections.outputName: objectTableSurvey
+      atools.rhoStatistics: RhoStatistics
+      bands:
+      - i
+    - connections.outputName: injected_objectTableSurvey
+  catalogMatchTract:
+    class: lsst.analysis.tools.tasks.catalogMatch.CatalogMatchTask
+    config:
+    - connections.matchedCatalog: injected_objectTable_tract_gaia_dr2_20200414_match
+      connections.catalog: injected_objectTable_tract
+  refCatObjectTract:
+    class: lsst.analysis.tools.tasks.refCatObjectAnalysis.RefCatObjectAnalysisTask
+    config:
+    - connections.outputName: injected_objectTable_tract_gaia_dr2_20200414_match
+  analyzeMatchedVisitCore:
+    class: lsst.analysis.tools.tasks.AssociatedSourcesTractAnalysisTask
+    config:
+    - python: 'from lsst.analysis.tools.atools import *
+
+        '
+      connections.outputName: matchedVisitCore
+      atools.stellarPhotometricRepeatability: StellarPhotometricRepeatability
+      atools.stellarPhotometricResiduals: StellarPhotometricResidualsFocalPlane
+      atools.stellarAstrometricResidualsRA: StellarAstrometricResidualsRAFocalPlanePlot
+      atools.stellarAstrometricResidualsDec: StellarAstrometricResidualsDecFocalPlanePlot
+      atools.stellarAstrometricResidualStdDevRA: StellarAstrometricResidualStdDevRAFocalPlanePlot
+      atools.stellarAstrometricResidualStdDevDec: StellarAstrometricResidualStdDevDecFocalPlanePlot
+      atools.stellarAstrometricRepeatability1: AstrometricRelativeRepeatability
+      atools.stellarAstrometricRepeatability1.xValue: 1
+      atools.stellarAstrometricRepeatability1.process.calculateActions.rms.annulus: 5
+      atools.stellarAstrometricRepeatability2: AstrometricRelativeRepeatability
+      atools.stellarAstrometricRepeatability2.xValue: 2
+      atools.stellarAstrometricRepeatability2.process.calculateActions.rms.annulus: 20
+      atools.stellarAstrometricRepeatability3: AstrometricRelativeRepeatability
+      atools.stellarAstrometricRepeatability3.xValue: 3
+      atools.stellarAstrometricRepeatability3.process.calculateActions.rms.annulus: 200
+      atools.stellarAstrometricRepeatability3.process.calculateActions.rms.threshAD: 30
+    - connections.outputName: injected_matchedVisitCore
+  analyzeMatchedVisitExtended:
+    class: lsst.analysis.tools.tasks.AssociatedSourcesTractAnalysisTask
+    config:
+    - python: |
+        from lsst.analysis.tools.atools import *
+        from lsst.analysis.tools.interfaces import *
+      connections.outputName: matchedVisitExtended
+      atools.modelPhotRepStarSn5to10: StellarPhotometricRepeatability
+      atools.modelPhotRepStarSn5to10.fluxType: gaussianFlux
+      atools.modelPhotRepStarSn5to10.process.filterActions.perGroupStdevFiltered.selectors.sn.minimum: 5
+      atools.modelPhotRepStarSn5to10.process.filterActions.perGroupStdevFiltered.selectors.sn.maximum: 10
+      atools.modelPhotRepStarSn5to10.produce.plot: NoPlot
+      atools.modelPhotRepStarSn10to20: StellarPhotometricRepeatability
+      atools.modelPhotRepStarSn10to20.fluxType: gaussianFlux
+      atools.modelPhotRepStarSn10to20.process.filterActions.perGroupStdevFiltered.selectors.sn.minimum: 10
+      atools.modelPhotRepStarSn10to20.process.filterActions.perGroupStdevFiltered.selectors.sn.maximum: 20
+      atools.modelPhotRepStarSn10to20.produce.plot: NoPlot
+      atools.modelPhotRepStarSn20to40: StellarPhotometricRepeatability
+      atools.modelPhotRepStarSn20to40.fluxType: gaussianFlux
+      atools.modelPhotRepStarSn20to40.process.filterActions.perGroupStdevFiltered.selectors.sn.minimum: 20
+      atools.modelPhotRepStarSn20to40.process.filterActions.perGroupStdevFiltered.selectors.sn.maximum: 40
+      atools.modelPhotRepStarSn20to40.produce.plot: NoPlot
+      atools.modelPhotRepStarSn40to80: StellarPhotometricRepeatability
+      atools.modelPhotRepStarSn40to80.fluxType: gaussianFlux
+      atools.modelPhotRepStarSn40to80.process.filterActions.perGroupStdevFiltered.selectors.sn.minimum: 40
+      atools.modelPhotRepStarSn40to80.process.filterActions.perGroupStdevFiltered.selectors.sn.maximum: 80
+      atools.modelPhotRepStarSn40to80.produce.plot: NoPlot
+      atools.psfPhotRepStarSn5to10: StellarPhotometricRepeatability
+      atools.psfPhotRepStarSn5to10.process.filterActions.perGroupStdevFiltered.selectors.sn.minimum: 5
+      atools.psfPhotRepStarSn5to10.process.filterActions.perGroupStdevFiltered.selectors.sn.maximum: 10
+      atools.psfPhotRepStarSn5to10.produce.plot: NoPlot
+      atools.psfPhotRepStarSn10to20: StellarPhotometricRepeatability
+      atools.psfPhotRepStarSn10to20.process.filterActions.perGroupStdevFiltered.selectors.sn.minimum: 10
+      atools.psfPhotRepStarSn10to20.process.filterActions.perGroupStdevFiltered.selectors.sn.maximum: 20
+      atools.psfPhotRepStarSn10to20.produce.plot: NoPlot
+      atools.psfPhotRepStarSn20to40: StellarPhotometricRepeatability
+      atools.psfPhotRepStarSn20to40.process.filterActions.perGroupStdevFiltered.selectors.sn.minimum: 20
+      atools.psfPhotRepStarSn20to40.process.filterActions.perGroupStdevFiltered.selectors.sn.maximum: 40
+      atools.psfPhotRepStarSn20to40.produce.plot: NoPlot
+      atools.psfPhotRepStarSn40to80: StellarPhotometricRepeatability
+      atools.psfPhotRepStarSn40to80.process.filterActions.perGroupStdevFiltered.selectors.sn.minimum: 40
+      atools.psfPhotRepStarSn40to80.process.filterActions.perGroupStdevFiltered.selectors.sn.maximum: 80
+      atools.psfPhotRepStarSn40to80.produce.plot: NoPlot
+    - connections.outputName: injected_matchedVisitExtended
+contracts:
+- contract: '''calib_psf_candidate'' not in measure.propagateFlags.source_flags if
+    makeWarp.useVisitSummaryPsf else True'
+- contract: '''calib_psf_reserved'' not in measure.propagateFlags.source_flags if
+    makeWarp.useVisitSummaryPsf else True'
+- contract: '''calib_psf_used'' not in measure.propagateFlags.source_flags if makeWarp.useVisitSummaryPsf
+    else True'
+- contract: consolidateHealSparsePropertyMaps.property_maps == healSparsePropertyMaps.property_maps
+- contract: detectAndMeasureDiaSources.connections.subtractedMeasuredExposure == forcedPhotDiffim.connections.exposure
+- contract: detectAndMeasureDiaSources.connections.subtractedMeasuredExposure == transformDiaSourceCat.connections.diffIm
+- contract: drpAssociation.connections.assocDiaSourceTable == drpDiaCalculation.connections.assocDiaSourceTable
+- contract: drpAssociation.connections.diaObjectTable == drpDiaCalculation.connections.diaObjectTable
+- contract: forcedPhotDiffim.connections.refCat == forcedPhotCcd.connections.refCat
+- contract: getTemplate.connections.template == subtractImages.connections.template
+- contract: selectGoodSeeingVisits.connections.goodVisits == templateGen.connections.selectedVisits
+- contract: subtractImages.connections.difference == detectAndMeasureDiaSources.connections.difference
+- contract: subtractImages.connections.matchedTemplate == detectAndMeasureDiaSources.connections.matchedTemplate
+- contract: templateGen.connections.coaddExposure == getTemplate.connections.coaddExposures
+- contract: transformDiaSourceCat.connections.diaSourceTable == consolidateDiaSourceTable.connections.inputCatalogs
+- contract: transformDiaSourceCat.connections.diaSourceTable == drpAssociation.connections.diaSourceTables
+subsets:
+  processCcd:
+    subset:
+    - isr
+    - characterizeImage
+    - calibrate
+    description: 'Set of tasks to run when doing single frame processing, without
+      any conversions to Parquet/DataFrames or visit-level summaries.
+
+      '
+  coaddition:
+    subset:
+    - inject_coadd
+    - healSparsePropertyMaps
+    - assembleCoadd
+    - makeWarp
+    description: 'A set of tasks to run when coadding images.
+
+      '
+  multiband:
+    subset:
+    - deblend
+    - measure
+    - mergeMeasurements
+    - mergeDetections
+    - detection
+    - forcedPhotCoadd
+    description: 'A set of tasks to run when making measurements on coadds.
+
+      '
+  objectTable:
+    subset:
+    - writeObjectTable
+    - transformObjectTable
+    - consolidateObjectTable
+    description: 'A set of tasks to transform multiband outputs into a parquet object
+      table.
+
+      '
+  forced:
+    subset:
+    - forcedPhotCoadd
+    - forcedPhotCcd
+    description: 'A set of tasks to run when doing forced measurements.
+
+      '
+  diffimDRP:
+    subset:
+    - transformDiaSourceCat
+    - templateGen
+    - selectGoodSeeingVisits
+    - subtractImages
+    - forcedPhotDiffOnDiaObjects
+    - forcedPhotCcdOnDiaObjects
+    - consolidateDiaSourceTable
+    - drpDiaCalculation
+    - drpAssociation
+    - forcedPhotDiffim
+    - detectAndMeasureDiaSources
+    - getTemplate
+    description: 'Subset for running image differencing branch of the DRP pipeline
+
+      '
+  fgcm:
+    subset: []
+    description: 'Subset that includes all FGCM tasks.
+
+      '
+  preSourceTable:
+    subset:
+    - writePreSourceTable
+    - transformPreSourceTable
+    - consolidatePreSourceTable
+    description: 'Set of tasks to generate parquet PreSource Tables, from single-visit
+      processing steps only.
+
+      '
+  sourceTable:
+    subset:
+    - writeRecalibratedSourceTable
+    description: 'Set of tasks to generate parquet Source Tables, using final calibrations.
+
+      '
+  analysis_visit_plots:
+    subset:
+    - plot_astromRefCat_sky_visit_dRA
+    - plot_e2PSF_scatter_visit
+    - plot_shapeSizePSF_scatter_visit
+    - plot_CircAp25_sub_PSF_all_scatter_visit
+    - plot_CircAp12_sub_PSF_calib_psf_used_sky_unknown_visit
+    - plot_CircAp12_sub_PSF_meas_scatter_visit
+    - plot_e1PSF_sky_visit
+    - plot_astromRefCat_scatter_visit_dRA
+    - plot_ShapeDiff_sky_visit
+    - plot_E1Diff_sky_visit
+    - plot_shapeSizeFractionalDiff_scatter_visit
+    - plot_E2Diff_sky_visit
+    - plot_shapeSizePSF_sky_visit
+    - plot_shapeSize_sky_visit
+    - plot_e1_sky_visit
+    - plot_ellipResids_quiver_visit
+    - plot_RhoStatistics_visit
+    - plot_shapeSize_scatter_visit
+    - plot_e1PSF_scatter_visit
+    - plot_e2_sky_visit
+    - plot_PSFluxSN_meas_sky_all_visit
+    - plot_E1Diff_scatter_visit
+    - plot_CircAp25_sub_PSF_meas_scatter_visit
+    - plot_astromRefCat_sky_visit_dDec
+    - plot_CircAp12_sub_PSF_meas_calib_psf_used_scatter_visit
+    - plot_CircAp12_sub_PSF_all_scatter_visit
+    - plot_CircAp12_sub_PSF_meas_sky_gals_visit
+    - plot_E2Diff_scatter_visit
+    - plot_CircAp12_sub_PSF_meas_calib_psf_used_sky_gals_visit
+    - plot_CircAp25_sub_PSF_gals_scatter_visit
+    - plot_e2_scatter_visit
+    - plot_CircAp12_sub_PSF_meas_calib_psf_used_sky_stars_visit
+    - plot_astromRefCat_scatter_visit_dDec
+    - plot_skyObject_sky_visit
+    - plot_CircAp12_sub_PSF_gals_scatter_visit
+    - plot_e1_scatter_visit
+    - match_astromRefCat_visit
+    - plot_shapeSizeDiff_scatter_visit
+    - plot_CircAp12_sub_PSF_meas_sky_stars_visit
+    - plot_e2PSF_sky_visit
+  analysis_coadd_plots:
+    subset:
+    - plot_E1Diff_sky
+    - plot_astromRefCat_scatter_tract_dDec
+    - plot_CircAp12_sub_PSF_meas_stars_scatter
+    - plot_astromRefCat_sky_tract_dDec
+    - plot_shapeSizeFractionalDiff_magDiff_scatter
+    - match_astromRefCat_objectTable
+    - histPlot_skyObject
+    - plot_astromRefCat_sky_tract_dRA
+    - plot_E1Diff_magDiff_scatter
+    - plot_wFit_PSF
+    - plot_wFit_CModel
+    - plot_CircAp12_sub_PSF_meas_calib_psf_used_sky_all
+    - plot_ri_gr_psf
+    - plot_E2Diff_magDiff_scatter
+    - plot_CircAp12_sub_PSF_meas_sky_stars
+    - plot_xFit_CModel
+    - plot_CircAp12_sub_PSF_meas_calib_psf_used_all_scatter
+    - plot_iz_ri_psf
+    - plot_E2Diff_scatter
+    - plot_astromRefCat_scatter_tract_dRA
+    - plot_RhoStatistics
+    - plot_CircAp12_sub_PSF_meas_gals_scatter
+    - plot_PSFFluxSN_meas_sky_all
+    - plot_E2Diff_sky
+    - plot_yFit_CModel
+    - plot_CModel_sub_PSFmag_meas_sky_galaxies
+    - skyPlot_skyObject
+    - plot_E1Diff_scatter
+    - plot_shapeSizeFractionalDiff_scatter
+    - plot_ri_gr_cmodel
+    - plot_CModel_sub_PSFmag_meas_sky_stars
+    - plot_CircAp12_sub_PSF_meas_sky_gals
+    - plot_yFit_PSF
+    - plot_shapeSizeFractionalDiff_sky
+    - plot_xFit_PSF
+  faro_visit:
+    subset:
+    - TE4
+    - nsrcMeasVisit
+    - TE3
+    description: |
+      Set of visit-level faro metrics. These tasks run on single-frame products and
+      require Calibrated Source Tables, which are available after
+      consolidateSourceTable (step6) is run.
+  faro_matched:
+    subset:
+    - matchCatalogsTract
+    - matchCatalogsPatch
+    - PF1_design
+    - PA1
+    - modelPhotRepGal2
+    - matchCatalogsTractGxsSNR5to80
+    - psfPhotRepStar4
+    - modelPhotRepStar1
+    - psfPhotRepStar2
+    - psfPhotRepStar3
+    - AD2_design
+    - modelPhotRepStar3
+    - matchCatalogsTractMag17to21p5
+    - AB1
+    - AF1_design
+    - AM1
+    - modelPhotRepGal3
+    - AD1_design
+    - psfPhotRepStar1
+    - matchCatalogsTractStarsSNR5to80
+    - AD3_design
+    - modelPhotRepGal1
+    - modelPhotRepGal4
+    - modelPhotRepStar4
+    - AM2
+    - AF3_design
+    - AF2_design
+    - modelPhotRepStar2
+    - AM3
+    - matchCatalogsPatchMultiBand
+    description: |
+      Set of tract-level, matched-visit faro metrics. These tasks run on single-frame
+      products and require Calibrated Source Tables, which are available after
+      consolidateSourceTable (step6) is run.
+  faro_tract:
+    subset:
+    - TE1
+    - TE2
+    - wPerp
+    - skyObjectMean
+    - skyObjectStd
+    description: |
+      Set of tract-level faro metrics to be run on coadd products. These use Object
+      Tables which are available after consolidateObjectTable (step3) is run.
+
+      These must have a band constraint in their data query to avoid generating
+      quanta for bands that do not have columns in the object table, since
+      using an object table dataset as input does not provide information to
+      the middleware about which tasks went into making the object table.
+  step1:
+    subset:
+    - isr
+    - calibrate
+    - writePreSourceTable
+    - transformPreSourceTable
+    - characterizeImage
+    description: |
+      Per-detector tasks that can be run together to start the DRP pipeline.
+
+      These should never be run with 'tract' or 'patch' as part of the data ID
+      expression if any later steps will also be run, because downstream steps
+      require full visits and 'tract' and 'patch' constraints will always
+      select partial visits that overlap that region.
+  step2a:
+    subset:
+    - isolatedStarAssociation
+    - consolidatePreSourceTable
+    - skyCorr
+    - consolidateVisitSummary
+    description: |
+      Global tasks: This is a mix of visit-level and tract-level tasks that
+      must be run with a skymap data query constraint only (an instrument
+      constraint is fine, but generally unneccessary).  For example, running
+      with 'tract' (and 'patch') constraints will select partial visits that
+      overlap that region.  A skymap constraint is necessary to prevent
+      isolatedStarAssociation from producing results for all skymaps in the
+      data repository. This only works with small to medium jobs.  Use DRP-Prod
+      for large production subsets.
+
+      skyCorr requires full visits, and 'tract' and 'patch'
+      constraints will always select partial visits that overlap that region.
+
+      Visit-level: consolidatePreSourceTable, consolidateVisitSummary,
+      skyCorr
+      Tract-level: isolatedStarAssociation
+  step2b:
+    subset: []
+    description: |
+      Per-tract steps that must be run after step2a.
+
+      These should be run with explicit 'tract' constraints essentially all the
+      time, because otherwise quanta will be created for jobs with only partial
+      visit coverage.
+
+      This subset is considered a workaround for missing middleware and task
+      functionality.  It may be removed in the future.
+  step2cde:
+    subset:
+    - updateVisitSummary
+    - finalizeCharacterization
+    - makeCcdVisitTable
+    - makeVisitTable
+    description: |
+      Per-visit and per-collection tasks that can be run together after step2b
+      with no data query constraints other than instrument.
+
+      FGCM requires full visits and 'tract' and 'patch' constraints will
+      always select partial visits that overlap that region.
+
+      This includes FGCM because it's configured here to run in "global" mode,
+      which means one should not use a 'tract' expression to constrain it, and
+      if one _did_ run it with a tract constraint (which would be a common
+      occurrence if it was included in any later step), it would be fed the
+      wrong (partial-visit) inputs to its 'background' connection.
+  step3:
+    subset:
+    - deblend
+    - inject_coadd
+    - healSparsePropertyMaps
+    - assembleCoadd
+    - templateGen
+    - measure
+    - mergeMeasurements
+    - selectGoodSeeingVisits
+    - mergeDetections
+    - detection
+    - forcedPhotCoadd
+    - makeWarp
+    - writeObjectTable
+    - transformObjectTable
+    - consolidateObjectTable
+    description: |
+      Tasks that can be run together, but only after the 'step1' and 'step2'
+      subsets.
+
+      These should be run with explicit 'tract' constraints essentially all the
+      time, because otherwise quanta will be created for jobs with only partial
+      visit coverage.
+
+      This subset is considered a workaround for missing middleware and task
+      functionality.  It may be removed in the future.
+  step4:
+    subset:
+    - transformDiaSourceCat
+    - forcedPhotCcd
+    - writeForcedSourceTable
+    - transformSourceTable
+    - subtractImages
+    - writeRecalibratedSourceTable
+    - forcedPhotDiffim
+    - detectAndMeasureDiaSources
+    - getTemplate
+    description: |
+      Tasks that can be run together, but only after the 'step1', 'step2' and
+      'step3' subsets
+
+      These detector-level tasks should not be run with 'tract' or 'patch' as
+      part of the data ID expression if all reference catalogs or diffIm
+      templates that cover these detector-level quanta are desired.
+  step5:
+    subset:
+    - transformForcedSourceTable
+    - consolidateFullDiaObjectTable
+    - consolidateForcedSourceOnDiaObjectTable
+    - forcedPhotDiffOnDiaObjects
+    - consolidateForcedSourceTable
+    - writeForcedSourceOnDiaObjectTable
+    - forcedPhotCcdOnDiaObjects
+    - drpDiaCalculation
+    - drpAssociation
+    - transformForcedSourceOnDiaObjectTable
+    - consolidateAssocDiaSourceTable
+    description: |
+      Tasks that can be run together, but only after the 'step1', 'step2',
+      'step3', and 'step4' subsets
+
+      This step includes patch-level aggregation Tasks. These should be run
+      with explicit 'tract' constraints in the data query, otherwise quanta
+      will be created for jobs with only partial visit coverage.
+      'consolidateForcedSourceTable' is a tract-level task that aggregates
+      patches and should be rerun if any of the patches fail.
+  step6:
+    subset:
+    - consolidateSourceTable
+    - consolidateDiaSourceTable
+    description: |
+      Tasks that can be run together, but only after the 'step1', 'step2',
+      'step3', and 'step4', 'step5' subsets
+
+      This step includes visit-level aggregation tasks. Running without tract
+      or patch in the data query is recommended, otherwise the outputs of
+      consolidateDiaSourceTable, and consolidateSourceTable
+      will not contain complete visits.
+
+      This subset is separate from step4 to signal to operators to pause to
+      assess unexpected image differencing failures before these aggregation
+      steps. Otherwise, if run in the same quantum graph, aggregated data
+      products (e.g. diaObjects) would not be created if one or more of the
+      expected inputs is missing.
+  step7:
+    subset:
+    - consolidateHealSparsePropertyMaps
+    description: |
+      Tasks that should be run as the final step that require global inputs,
+      and can be run after the 'step3' subset.
+
+      This step has global aggregation tasks to run over all visits, detectors,
+      tracts, etc.  This step should be run only with the instrument constraint
+      in the data query.
+  step8:
+    subset:
+    - analyzeMatchedVisitCore
+    - refCatObjectTract
+    - analyzeObjectTableSurveyCore
+    - validateObjectTableCore
+    - catalogMatchTract
+    - analyzeObjectTableCore
+    description: |
+      Core (most important), coadd-level plots/metrics from analysis_tools.
+
+      Must be run after 'step3' (writeObjectTable). Cannot be run with any
+      dataquery constraints if analyzeObjectTableSurveyCore is included.
+
+      Can be run together with analysis_drp subsets, e.g. pipeline.yaml
+      (hash/pound sign)step8,analysis_coadd_plots,imsim_analysis_coadd_plots
