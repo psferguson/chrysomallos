@@ -52,13 +52,16 @@ def adopt_a_cat(wcs, bbox, xcen, ycen, band_for_injection,
     # Note: we have assume rscale = r_half. I _think_ this is true for the
     #   projected half-light radius and Plummer scale radius...
 
+    dist = dist*u.Mpc
+    r_scale = r_scale*u.pc
+
     # create the artpop stellar population
     ssp = artpop.MISTPlummerSSP(
         log_age=np.log10(age*1e9),
         feh=feh,
         total_mass=mass,
-        distance=dist*u.Mpc,
-        rscale=r_scale*u.pc,
+        distance=dist,
+        scale_radius=r_scale,
         phot_system='LSST', # photometric system
         imf='kroupa', # default imf
         random_state=rand, # random state (can be set for reproducibility)
@@ -101,9 +104,12 @@ def adopt_a_cat(wcs, bbox, xcen, ycen, band_for_injection,
     else:
         mag_for_injection = i_ext
 
+    dist_column = np.repeat(dist.value, len(ssp.mags))
+
     cat = Table({'injection_id': np.arange(len(ssp.mags)),
                  'ra': radec_coords[0], 'dec': radec_coords[1],
                  'source_type': ['DeltaFunction']*len(ssp.mags),
+                 'distance': dist_column,
                  'g_mag': g_ext, 'r_mag': r_ext, 'i_mag': i_ext,
                  'mag': mag_for_injection,
                  })
@@ -111,9 +117,9 @@ def adopt_a_cat(wcs, bbox, xcen, ycen, band_for_injection,
     return cat
 
 
-def massage_the_cat(cat, injection_maglim, band_for_injection,
-                    xcen, ycen,
-                    r_scale=300.0, dist=2.0*u.Mpc):
+def massage_the_cat(cat_inp, injection_maglim, band_for_injection,
+                    xcen, ycen, wcs, bbox,
+                    r_scale=300.0, dist=2.0):
     """Replace the total flux below some mag limit with the
          appropriate Sersic model.
 
@@ -129,6 +135,10 @@ def massage_the_cat(cat, injection_maglim, band_for_injection,
         X-coordinate to center the dwarf on (between 0-4000)
     ycen : `float`
         Y-coordinate to center the dwarf on (between 0-4000)
+    wcs : `wcs object`
+        The wcs object associated with the image to inject into.
+    bbox : `bbox object`
+        The bounding box object associated with the image to inject into.
     r_scale : `float`
         Plummer scale radius in pc
     dist : `float`
@@ -148,14 +158,17 @@ def massage_the_cat(cat, injection_maglim, band_for_injection,
     # Reduce the original catalog to only stars above the magnitude limit.
     # Append the Sersic model for the remaining flux.
 
-    band = 'LSST_'+band_for_injection
-    mag_for_sersic = totmag_below_maglim(cat, maglim[band])
+    band = band_for_injection+'_mag'
+    mag_for_sersic = totmag_below_maglim(cat_inp[band], injection_maglim)
 
     # Replicate the magnitude column for the band you want to inject into:
-    cat.add_column(cat[band], name='mag')
+    cat_inp.replace_column('mag', cat_inp[band])
+
+    cat = cat_inp[cat_inp['mag'] <= injection_maglim]
 
     # Parameters for simulated dwarf:
-    reff = r_scale/1.68
+    r_scale = r_scale*u.pc
+    reff = (r_scale/1.68).to(u.kpc)
     pa = 0.0
     axis_ratio = 1.0
     # ra_sim = np.median(cat['ra'])
@@ -163,8 +176,15 @@ def massage_the_cat(cat, injection_maglim, band_for_injection,
 
     # Append a single line for the "galaxy" that contains the unresolved flux:
     cat.add_row()
-    cat[-1]['x'] = xcen
-    cat[-1]['y'] = ycen
+
+    x0 = bbox.beginX
+    y0 = bbox.beginY
+    xcoord = xcen + x0
+    ycoord = ycen + y0
+    radec_coords = wcs.pixelToSkyArray(xcoord, ycoord, degrees=True)
+
+    cat[-1]['ra'] = radec_coords[0][0]
+    cat[-1]['dec'] = radec_coords[1][0]
     cat[-1]['mag'] = mag_for_sersic
     cat[-1]['source_type'] = 'Sersic'
 
@@ -175,7 +195,7 @@ def massage_the_cat(cat, injection_maglim, band_for_injection,
     # We need Sersic index, position angle, axis ratio, and semimajor axis for the galaxy model,
     #   so create columns for these (with all stars set to some default values)
     semimajor_all = 0.0*cat['mag']
-    semimajor_all[-1] = reff
+    semimajor_all[-1] = reff.value
     sersic_n_all = 0.0*cat['mag']
     sersic_n_all[-1] = 1.0
     pa_all = 0.0*cat['mag']
