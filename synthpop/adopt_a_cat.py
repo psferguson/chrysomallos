@@ -196,12 +196,12 @@ def massage_the_cat(cat_inp, injection_maglim, band_for_injection,
     #   so create columns for these (with all stars set to some default values)
     semimajor_all = 0.0*cat['mag']
     semimajor_all[-1] = reff.value
-    sersic_n_all = 0.0*cat['mag']
+    sersic_n_all = 0.0*cat['mag'] + 1.0
     sersic_n_all[-1] = 1.0
     pa_all = 0.0*cat['mag']
     axis_ratio_all = np.ones(len(cat['mag']))
 
     cat.add_columns([semimajor_all, sersic_n_all, pa_all, axis_ratio_all],
-                    names=['r_eff', 'n', 'pa', 'axis_ratio'])
+                    names=['scale_radius', 'n', 'pa', 'axis_ratio'])
 
     return cat
