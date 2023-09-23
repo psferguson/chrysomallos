@@ -183,6 +183,7 @@ def massage_the_cat(cat_inp, injection_maglim, band_for_injection,
     ycoord = ycen + y0
     radec_coords = wcs.pixelToSkyArray(xcoord, ycoord, degrees=True)
 
+    cat[-1]['injection_id'] = np.max(cat_inp['injection_id']) + 1
     cat[-1]['ra'] = radec_coords[0][0]
     cat[-1]['dec'] = radec_coords[1][0]
     cat[-1]['mag'] = mag_for_sersic
