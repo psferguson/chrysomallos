@@ -135,5 +135,5 @@ def rad_physical_to_sky(radius, distance):
     """
     radius = radius*u.pc
     distance = distance*u.Mpc
-    angle = radius/distance
+    angle = radius/(distance.to(u.pc))*u.rad
     return angle.to(u.arcsec).value
