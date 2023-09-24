@@ -1,5 +1,12 @@
 import numpy as np
 
+__all__ = [
+    "totmag",
+    "totmag_below_maglim",
+    "fluxfrac_above_maglim",
+    "mag_at_flux_percentile",
+]
+
 
 def totmag(mags):
     """Calculate the total magnitude of an input list of stars.
