@@ -5,6 +5,7 @@ __all__ = [
     "totmag_below_maglim",
     "fluxfrac_above_maglim",
     "mag_at_flux_percentile",
+    "rad_physical_to_sky"
 ]
 
 
@@ -114,3 +115,24 @@ def mag_at_flux_percentile(mags, pct):
     mag_at_pct = sorted_mags[np.argmin(np.abs(cumflux_frac-pct))]
 
     return mag_at_pct
+
+
+def rad_physical_to_sky(radius, distance):
+    """Convert a physical size at a given distance to angular size on the sky.
+
+    Parameters
+    ----------
+    radius : `float`
+        Radius (size) you wish to convert, in pc
+    distance : `float`
+        Distance in Mpc
+
+    Returns
+    -------
+    rad_arcsec : `float`
+        Radius converted to arseconds.
+    """
+    radius = radius*u.pc
+    distance = distance*u.Mpc
+    angle = radius/distance
+    return angle.to(u.arcsec).value

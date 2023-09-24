@@ -5,7 +5,8 @@ from astropy.coordinates import SkyCoord
 from dustmaps.sfd import SFDQuery
 import numpy as np
 import pandas as pd
-from utils import totmag, totmag_below_maglim, fluxfrac_above_maglim, mag_at_flux_percentile
+from utils import totmag, totmag_below_maglim, fluxfrac_above_maglim,
+    mag_at_flux_percentile, rad_physical_to_sky
 
 __all__ = [
     "adopt_a_cat",
@@ -175,6 +176,8 @@ def massage_the_cat(cat_inp, injection_maglim, band_for_injection,
     # Parameters for simulated dwarf:
     r_scale = r_scale*u.pc
     reff = (r_scale/1.68).to(u.kpc)
+    # Get the angular size corresponding to the given radius, distance:
+    radius = rad_physical_to_sky(r_scale, dist)
     pa = 0.0
     axis_ratio = 1.0
     # ra_sim = np.median(cat['ra'])
@@ -201,7 +204,7 @@ def massage_the_cat(cat_inp, injection_maglim, band_for_injection,
     # We need Sersic index, position angle, axis ratio, and semimajor axis for the galaxy model,
     #   so create columns for these (with all stars set to some default values)
     semimajor_all = 0.0*cat['mag']
-    semimajor_all[-1] = reff.value
+    semimajor_all[-1] = radius
     sersic_n_all = 0.0*cat['mag']
     sersic_n_all[-1] = 1.0
     pa_all = 0.0*cat['mag']
