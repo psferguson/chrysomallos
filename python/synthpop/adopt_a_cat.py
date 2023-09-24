@@ -211,6 +211,6 @@ def massage_the_cat(cat_inp, injection_maglim, band_for_injection,
     axis_ratio_all = np.ones(len(cat['mag']))
 
     cat.add_columns([semimajor_all, sersic_n_all, pa_all, axis_ratio_all],
-                    names=['r_eff', 'n', 'pa', 'axis_ratio'])
+                    names=['scale_radius', 'n', 'pa', 'axis_ratio'])
 
     return cat
