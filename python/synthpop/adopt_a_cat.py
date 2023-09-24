@@ -174,8 +174,8 @@ def massage_the_cat(cat_inp, injection_maglim, band_for_injection,
     cat = cat_inp[cat_inp['mag'] <= injection_maglim]
 
     # Parameters for simulated dwarf:
-    r_scale = r_scale*u.pc
-    reff = (r_scale/1.68).to(u.kpc)
+    # r_scale = r_scale*u.pc
+    # reff = (r_scale/1.68).to(u.kpc)
     # Get the angular size corresponding to the given radius, distance:
     radius = rad_physical_to_sky(r_scale, dist)
     pa = 0.0
