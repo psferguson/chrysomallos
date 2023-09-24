@@ -5,7 +5,7 @@ from astropy.coordinates import SkyCoord
 from dustmaps.sfd import SFDQuery
 import numpy as np
 import pandas as pd
-from ../utils.utils import totmag, totmag_below_maglim, fluxfrac_above_maglim, mag_at_flux_percentile
+from ..utils.utils import totmag, totmag_below_maglim, fluxfrac_above_maglim, mag_at_flux_percentile
 
 def adopt_a_cat(wcs, bbox, xcen, ycen, band_for_injection,
                 age=10.0, feh=-2.0, mass=5.0e5, dist=2.0, r_scale=300.0,
