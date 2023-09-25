@@ -14,9 +14,10 @@ __all__ = [
 ]
 
 
-def adopt_a_cat(wcs, bbox, xcen, ycen, band_for_injection,
+def adopt_a_cat(wcs, bbox, xcen, ycen, 
                 age=10.0, feh=-2.0, mass=5.0e5, dist=2.0, r_scale=300.0,
                 mag_limit=36.0, mag_limit_band='LSST_g',
+		random_seed=None,
                 ):
     """Make a synthetic source catalog to inject into an image.
 
@@ -30,8 +31,6 @@ def adopt_a_cat(wcs, bbox, xcen, ycen, band_for_injection,
         X-coordinate to center the dwarf on (between 0-4000)
     ycen : `float`
         Y-coordinate to center the dwarf on (between 0-4000)
-    band_for_injection : `str`
-        Band of image that the stars will be injected into.
     age : `float`
         Age in Gyr
     feh : `float`
@@ -46,6 +45,8 @@ def adopt_a_cat(wcs, bbox, xcen, ycen, band_for_injection,
         Faintest mag of stars to include
     mag_limit_band : `str`
         Band to apply mag_limit in
+    random_seed: `int`
+	if not None this sets the random seed to generate catalog with 
 
     Returns
     -------
@@ -54,7 +55,11 @@ def adopt_a_cat(wcs, bbox, xcen, ycen, band_for_injection,
     """
 
     # use this random state for reproducibility
-    rand = np.random.RandomState()
+    if random_seed is None:
+    	rand = np.random.RandomState()
+    else:
+        
+        rand = np.random.RandomState(random_seed)
 
     # Note: we have assume rscale = r_half. I _think_ this is true for the
     #   projected half-light radius and Plummer scale radius...
@@ -102,14 +107,14 @@ def adopt_a_cat(wcs, bbox, xcen, ycen, band_for_injection,
     i_ext = ssp.mags['LSST_i'] + ebvvec*band_a_ebv[3]
     z_ext = ssp.mags['LSST_z'] + ebvvec*band_a_ebv[4]
 
-    if band_for_injection == 'g':
-        mag_for_injection = g_ext
-    elif band_for_injection == 'r':
-        mag_for_injection = r_ext
-    elif band_for_injection == 'i':
-        mag_for_injection = i_ext
-    else:
-        mag_for_injection = i_ext
+    # if band_for_injection == 'g':
+    #     mag_for_injection = g_ext
+    # elif band_for_injection == 'r':
+    #     mag_for_injection = r_ext
+    # elif band_for_injection == 'i':
+    #     mag_for_injection = i_ext
+    # else:
+    #     mag_for_injection = i_ext
 
     dist_column = np.repeat(dist.value, len(ssp.mags))
 
@@ -118,7 +123,7 @@ def adopt_a_cat(wcs, bbox, xcen, ycen, band_for_injection,
                  'source_type': ['DeltaFunction']*len(ssp.mags),
                  'distance': dist_column,
                  'g_mag': g_ext, 'r_mag': r_ext, 'i_mag': i_ext,
-                 'mag': mag_for_injection,
+                 #'mag': mag_for_injection,
                  })
 
     return cat
@@ -169,7 +174,7 @@ def massage_the_cat(cat_inp, injection_maglim, band_for_injection,
     mag_for_sersic = totmag_below_maglim(cat_inp[band], injection_maglim)
 
     # Replicate the magnitude column for the band you want to inject into:
-    cat_inp.replace_column('mag', cat_inp[band])
+    cat_inp['mag'] = cat_inp[band]
 
     cat = cat_inp[cat_inp['mag'] <= injection_maglim]
 
