@@ -7,6 +7,7 @@ import numpy as np
 import pandas as pd
 from utils import (totmag, totmag_below_maglim, fluxfrac_above_maglim,
                    mag_at_flux_percentile, rad_physical_to_sky)
+from .artpop_source import MISTSersicSSPStarlink
 
 __all__ = [
     "adopt_a_cat",
@@ -16,8 +17,9 @@ __all__ = [
 
 def adopt_a_cat(wcs, bbox, xcen, ycen, 
                 age=10.0, feh=-2.0, mass=5.0e5, dist=2.0, r_scale=300.0,
+                ellip=0, theta = 0, n = 1 ,
                 mag_limit=36.0, mag_limit_band='LSST_g',
-		random_seed=None,
+		        random_seed=None,
                 ):
     """Make a synthetic source catalog to inject into an image.
 
@@ -40,7 +42,13 @@ def adopt_a_cat(wcs, bbox, xcen, ycen,
     dist : `float`
         Distance in Mpc
     r_scale : `float`
-        Plummer scale radius in pc
+        Sersic scale radius in pc
+    ellip: `float`
+        ellipticity between 0:1. e=1-b/a
+    theta: `float`
+        position angle in deg 
+    n: `float`
+        sersic index
     mag_limit : `float`
         Faintest mag of stars to include
     mag_limit_band : `str`
@@ -58,7 +66,6 @@ def adopt_a_cat(wcs, bbox, xcen, ycen,
     if random_seed is None:
     	rand = np.random.RandomState()
     else:
-        
         rand = np.random.RandomState(random_seed)
 
     # Note: we have assume rscale = r_half. I _think_ this is true for the
@@ -68,12 +75,15 @@ def adopt_a_cat(wcs, bbox, xcen, ycen,
     r_scale = r_scale*u.pc
 
     # create the artpop stellar population
-    ssp = artpop.MISTPlummerSSP(
+    ssp = MISTSersicSSPStarlink(
         log_age=np.log10(age*1e9),
         feh=feh,
         total_mass=mass,
         distance=dist,
-        scale_radius=r_scale,
+        r_eff=r_scale,
+        ellip=ellip,
+        theta=theta,
+        n=n,
         phot_system='LSST', # photometric system
         imf='kroupa', # default imf
         random_state=rand, # random state (can be set for reproducibility)
@@ -81,6 +91,7 @@ def adopt_a_cat(wcs, bbox, xcen, ycen,
         pixel_scale=0.168, # HSC pixel scale
         mag_limit=mag_limit,
         mag_limit_band=mag_limit_band,
+        
     )
 
     x0 = bbox.beginX
