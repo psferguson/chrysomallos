@@ -207,10 +207,10 @@ def massage_the_cat(cat_inp, injection_maglim, band_for_injection,
     y0 = bbox.beginY
     xcoord = xcen + x0
     ycoord = ycen + y0
-    radec_coords = wcs.pixelToSkyArray(xcoord, ycoord, degrees=True)
+    radec_coords = wcs.pixelToSky(float(xcoord), float(ycoord))
 
-    cat[-1]['ra'] = radec_coords[0][0]
-    cat[-1]['dec'] = radec_coords[1][0]
+    cat[-1]['ra'] = radec_coords[0].asDegrees()
+    cat[-1]['dec'] = radec_coords[1].asDegrees()
     cat[-1]['mag'] = mag_for_sersic
     cat[-1]['source_type'] = 'Sersic'
 
