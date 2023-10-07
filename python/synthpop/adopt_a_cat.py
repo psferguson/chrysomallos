@@ -15,7 +15,7 @@ __all__ = [
 ]
 
 
-def adopt_a_cat(wcs, bbox, xcen, ycen, 
+def adopt_a_cat(wcs, bbox, xcen, ycen,
                 age=10.0, feh=-2.0, mass=5.0e5, dist=2.0, r_scale=300.0,
                 ellip=0, theta = 0, n = 1 ,
                 mag_limit=36.0, mag_limit_band='LSST_g',
@@ -46,7 +46,7 @@ def adopt_a_cat(wcs, bbox, xcen, ycen,
     ellip: `float`
         ellipticity between 0:1. e=1-b/a
     theta: `float`
-        position angle in deg 
+        position angle in deg
     n: `float`
         sersic index
     mag_limit : `float`
@@ -54,7 +54,7 @@ def adopt_a_cat(wcs, bbox, xcen, ycen,
     mag_limit_band : `str`
         Band to apply mag_limit in
     random_seed: `int`
-	if not None this sets the random seed to generate catalog with 
+	if not None this sets the random seed to generate catalog with
 
     Returns
     -------
@@ -73,6 +73,7 @@ def adopt_a_cat(wcs, bbox, xcen, ycen,
 
     dist = dist*u.Mpc
     r_scale = r_scale*u.pc
+    pixel_scale = wcs.getPixelScale().asArcseconds()
 
     # create the artpop stellar population
     ssp = MISTSersicSSPStarlink(
@@ -88,10 +89,9 @@ def adopt_a_cat(wcs, bbox, xcen, ycen,
         imf='kroupa', # default imf
         random_state=rand, # random state (can be set for reproducibility)
         xy_dim=1999, # half the size of an LSST patch
-        pixel_scale=0.168, # HSC pixel scale
+        pixel_scale=pixel_scale, # pixel scale of input image
         mag_limit=mag_limit,
         mag_limit_band=mag_limit_band,
-        
     )
 
     x0 = bbox.beginX
