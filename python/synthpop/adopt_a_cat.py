@@ -75,6 +75,8 @@ def adopt_a_cat(wcs, bbox,
     dist = dist*u.Mpc
     r_scale = r_scale*u.pc
     pixel_scale = wcs.getPixelScale().asArcseconds()
+    # If the image is 2k x 2k, the dwarf will be centered at 1000, 1000
+    xydim = 2000
 
     # create the artpop stellar population
     ssp = MISTSersicSSPStarlink(
@@ -89,7 +91,7 @@ def adopt_a_cat(wcs, bbox,
         phot_system='LSST', # photometric system
         imf='kroupa', # default imf
         random_state=rand, # random state (can be set for reproducibility)
-        xy_dim=1999, # half the size of an LSST patch
+        xy_dim=xydim, # half the size of an LSST patch
         pixel_scale=pixel_scale, # pixel scale of input image
         mag_limit=mag_limit,
         mag_limit_band=mag_limit_band,
@@ -199,6 +201,17 @@ def massage_the_cat(cat_inp, injection_maglim, band_for_injection,
     axis_ratio = 1.0
     # ra_sim = np.median(cat['ra'])
     # dec_sim = np.median(cat['dec'])
+
+    # Shift the input coordinates to the desired xy coord:
+    xycoords_inp = wcs_g.skyToPixelArray(cat0['ra'], cat0['dec'], degrees=True)
+    # Using a fixed injection image size of 2000x2000 for now
+    dwarfcen_x = 1000
+    dwarfcen_y = 1000
+    xxx = xycoords_inp[0] - dwarfcen_x + xcen
+    yyy = xycoords_inp[1] - dwarfcen_y + ycen
+    radec_coords_stars = wcs.pixelToSkyArray(xxx, yyy, degrees=True)
+    cat['ra'] = radec_coords_stars[0]
+    cat['dec'] = radec_coords_stars[1]
 
     # Append a single line for the "galaxy" that contains the unresolved flux:
     cat.add_row()
