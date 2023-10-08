@@ -137,3 +137,36 @@ def rad_physical_to_sky(radius, distance):
     distance = distance*u.Mpc
     angle = radius/(distance.to(u.pc))*u.rad
     return angle.to(u.arcsec).value
+
+
+def get_flux_in_annulus(image, xpos, ypos, r_inner, r_outer):
+    """
+    Extract the flux within an annulus centered on a given position from an image.
+
+    Parameters
+    ----------
+    image: ExposureF
+        Image to measure.
+    xpos: float
+        X pixel position to center on.
+    ypos: float
+        Y pixel position to center on.
+    r_inner: float
+        Inner radius of annulus, in arcseconds
+    r_outer: float
+        Outer radius of annulus, in arcseconds
+
+    Returns
+    -------
+    totflux
+    """
+    pix_scale = image.getWcs().getPixelScale().asArcseconds()
+    r_inner_pix = r_inner / pix_scale
+    r_outer_pix = r_outer / pix_scale
+    xv = np.arange(0, image.getHeight(), 1)
+    yv = np.arange(0, image.getWidth(), 1)
+    xx, yy = np.meshgrid(xv, yv)
+    rad = np.sqrt((xx-xpos)**2 + (yy-ypos)**2)
+    picksel = (rad > r_inner_pix) & (rad < r_outer_pix)
+    totflux = np.sum(image.image.array[picksel])
+    return totflux
