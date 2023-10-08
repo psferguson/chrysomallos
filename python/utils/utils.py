@@ -6,7 +6,8 @@ __all__ = [
     "totmag_below_maglim",
     "fluxfrac_above_maglim",
     "mag_at_flux_percentile",
-    "rad_physical_to_sky"
+    "rad_physical_to_sky",
+    "get_flux_in_annulus",
 ]
 
 
