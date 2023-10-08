@@ -76,7 +76,7 @@ def adopt_a_cat(wcs, bbox,
     r_scale = r_scale*u.pc
     pixel_scale = wcs.getPixelScale().asArcseconds()
     # If the image is 2k x 2k, the dwarf will be centered at 1000, 1000
-    xydim = 2000
+    xydim = 1999
 
     # create the artpop stellar population
     ssp = MISTSersicSSPStarlink(
