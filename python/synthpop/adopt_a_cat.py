@@ -203,7 +203,7 @@ def massage_the_cat(cat_inp, injection_maglim, band_for_injection,
     # dec_sim = np.median(cat['dec'])
 
     # Shift the input coordinates to the desired xy coord:
-    xycoords_inp = wcs.skyToPixelArray(cat0['ra'], cat0['dec'], degrees=True)
+    xycoords_inp = wcs.skyToPixelArray(cat['ra'], cat['dec'], degrees=True)
     # Using a fixed injection image size of 2000x2000 for now
     dwarfcen_x = 1000
     dwarfcen_y = 1000
