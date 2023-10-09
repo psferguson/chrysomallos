@@ -1,1 +1,0 @@
-from .adopt_a_cat import *
