@@ -1,0 +1,19 @@
+
+# catalog creation
+dwarfs:
+  - id: 0
+    x_cen: 1000
+    y_cen: 1000
+    dist: 2.0
+    r_scale: 100
+    mag_limit: 27
+    random_seed: 69
+  - id: 1
+    x_cen: 1500
+    y_cen: 1500
+    dist: 2.0
+    r_scale: 100
+    mag_limit: 27
+    random_seed: 69
+# catalog ingestion
+inject_cat_collection: "u/pferguso/dwarf_script_test"
