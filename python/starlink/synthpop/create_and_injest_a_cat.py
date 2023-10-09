@@ -22,7 +22,7 @@ default_config_dict={
     }
 
 class DwarfConfig():
-     """
+    """
     Configuration class for a dwarf galaxy. 
     Sets various properties of the dwarf galaxy, including its location, 
     age, metallicity, and other parameters.
@@ -93,7 +93,7 @@ class CreateDwarfInjectionCatalog():
             setattr(self, key, value)
     
     def run(self):
-         """
+        """
         Main method to run the dwarf injection catalog creation process.
         """
         self.get_data_ids()
