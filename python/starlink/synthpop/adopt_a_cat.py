@@ -5,7 +5,7 @@ from astropy.coordinates import SkyCoord
 from dustmaps.sfd import SFDQuery
 import numpy as np
 import pandas as pd
-from utils import (totmag, totmag_below_maglim, fluxfrac_above_maglim,
+from starlink.utils import (totmag, totmag_below_maglim, fluxfrac_above_maglim,
                    mag_at_flux_percentile, rad_physical_to_sky)
 from .artpop_source import MISTSersicSSPStarlink
 
