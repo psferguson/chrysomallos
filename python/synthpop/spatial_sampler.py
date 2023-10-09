@@ -4,6 +4,13 @@ from astropy.modeling.models import Sersic1D
 from artpop.util import check_units, check_xy_dim
 import astropy.units as u
 
+__all__ = [
+    "inverse_transform_sample",
+    "SpatialSampler",
+    "SersicSampler",
+    "sersic_xy",
+]
+
 def inverse_transform_sample(vals, pdf, size):
     """ Perform inverse transform sampling
 
