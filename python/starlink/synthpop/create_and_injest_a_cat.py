@@ -4,6 +4,7 @@ import astropy.units as u
 import numpy as np
 from tqdm import tqdm
 import yaml
+from dataclasses import dataclass
 
 
 from lsst.daf.butler import Butler, CollectionType
@@ -21,6 +22,7 @@ default_config_dict={
     "dwarfs": []
     }
 
+@dataclass
 class DwarfConfig():
     """
     Configuration class for a dwarf galaxy. 
@@ -29,35 +31,35 @@ class DwarfConfig():
     """
     # DEFAULT PARAMETERS 
     # ID of the injection cat
-    id = None
+    id: int
     # X-coordinate of the object's center [pixel]
-    x_cen = None
+    x_cen: float
     # Y-coordinate of the object's center [pixel]
-    y_cen = None
+    y_cen: float
     # Age of the object [Gyr]
-    age = 10.0
+    age: float = 10.0
     # Metallicity of the object [Fe/H]
-    feh = -2.0
+    feh: float = -2.0
     # Mass of the object [Msolar]
-    mass = 5.0e5
+    mass: float = 5.0e5
     # Distance to the object [Mpc]
-    dist = 2.0 
+    dist: float = 2.0 
     # Scale radius of the object [pc]
-    r_scale = 100 
+    r_scale: float = 100 
     # Ellipticity of the object (0-1)
-    ellip = 0
+    ellip: float = 0
     # Orientation angle of the object
-    theta = 0
+    theta: float = 0
     # Sersic index of the object (shape parameter)
-    n = 1
+    n: float = 1
     # Magnitude limit to inject for the object
-    mag_limit = 27
+    mag_limit: float = 27
     # Band in which the magnitude limit is defined
-    mag_limit_band = "LSST_g"
+    mag_limit_band: str = "LSST_g"
     # Seed for random number generation (for reproducibility)
-    random_seed = None
+    random_seed: int = None
     
-    def __init__(self, dwarf_dict):
+    def __post_init__(self, dwarf_dict=None):
         """
         Initialize the class with the given dwarf dictionary.
         
@@ -66,11 +68,9 @@ class DwarfConfig():
         dwarf_dict : dict
             Dictionary containing the properties and attributes of a dwarf.
         """
-        # update new values
-        for key, value in dwarf_dict.items():
-            setattr(self, key, value)
-            
-        
+        # check that values are not bad
+        if (self.ellip < 0) or (self.ellip > 1):
+            raise RuntimeError(f"ellip must be between 0 and 1 : {self.ellip}")
 
 class CreateDwarfInjectionCatalog():
     """
@@ -88,16 +88,19 @@ class CreateDwarfInjectionCatalog():
             Configuration dictionary with parameters and settings.
             Default is `default_config_dict`.
         """
-        self.config_dict = config_dict
-        for key, value in self.config_dict.items():
+        for key, value in config_dict.items():
             setattr(self, key, value)
+        self.dwarf_configs = []
+        for dwarf in self.dwarfs:
+            self.dwarf_configs.append(DwarfConfig(**dwarf))
     
-    def run(self):
+    def run(self, ingest=False):
         """
         Main method to run the dwarf injection catalog creation process.
         """
         self.get_data_ids()
         self.butler = Butler(self.repo, collections=self.collection)
+        # grab deepCoaddd
         self.get_coadds()
         self.dwarf_cats=[]
         # generate xy catalog for each dwarf
@@ -134,12 +137,13 @@ class CreateDwarfInjectionCatalog():
                 )
         for band in self.bands: 
             self.injection_cats[band] = atable.vstack(self.injection_cats[band])
-        
-        self.ingest_injection_catalogs(si_input_collection = self.inject_cat_collection, 
-                                         catalogs = self.injection_cats, 
-                                         bands = self.bands
-        )
-        
+        if ingest:
+            self.ingest_injection_catalogs(si_input_collection = self.inject_cat_collection, 
+                                            catalogs = self.injection_cats, 
+                                            bands = self.bands
+            )
+        else:
+            logger.info("not ingesting catalogs to change use self.run(ingest=True)")
         
     def get_data_ids(self, tract=9615, patch=3):
         """
@@ -203,6 +207,11 @@ class CreateDwarfInjectionCatalog():
                 output_collection=si_input_collection,
                 dataset_type_name='injection_catalog'
             )
+    def save_config(self, filename):
+        yaml_dict=vars(self).copy()
+        del yaml_dict['dwarf_configs']
+        with open(filename, 'w') as file:
+            yaml.dump(yaml_dict, file)
     
 if __name__ == "__main__":
     """
@@ -219,10 +228,7 @@ if __name__ == "__main__":
         user_config_dict = yaml.safe_load(file)
         for key, value in user_config_dict.items():
             config_dict[key] = value
-        config_dict["dwarf_configs"]=[]
-        for dwarf in config_dict["dwarfs"]:
-            config_dict["dwarf_configs"].append(DwarfConfig(dwarf))
         
 
     creator=CreateDwarfInjectionCatalog(config_dict)
-    creator.run()
+    creator.run(injest=False)
