@@ -3,7 +3,7 @@ REPO=/repo/main
 
 bands='g'
 names='27 34 28 29 30 31 32 33'
-for band in bands
+for band in $bands
 do
     for name in $names
         do
@@ -18,7 +18,7 @@ do
             -o $OUTPUT \
             -p pipelines/DRP-RC2+injection_by_peter.yaml#inject_coadd \
             -d "instrument='HSC' AND skymap='hsc_rings_v1' AND
-            tract=9615 AND patch=3 AND (band = '$band') " 
-            
+            tract=9615 AND patch=3 AND (band = '$band') " \
+            -j 6
         done
 done
