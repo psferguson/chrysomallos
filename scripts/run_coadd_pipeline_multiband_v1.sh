@@ -4,8 +4,8 @@ REPO=/repo/main
 names='27 29 30 31 33'
 for name in $names
 do
-    INJECT_COLL=u/pferguso/full_dwarf_test/2_lim_$name
-    OUTPUT=u/pferguso/full_dwarf_test/2_lim_$name/step3
+    INJECT_COLL=u/pferguso/full_dwarf_test/300_lim_$name
+    OUTPUT=u/pferguso/full_dwarf_test/300_lim_$name/step3
     echo $INJECT_COLL
     pipetask --long-log \
     run --register-dataset-types \
