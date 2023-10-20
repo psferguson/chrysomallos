@@ -171,3 +171,89 @@ def get_flux_in_annulus(image, xpos, ypos, r_inner, r_outer):
     picksel = (rad > r_inner_pix) & (rad < r_outer_pix)
     totflux = np.sum(image.image.array[picksel])
     return totflux
+
+
+def mstar_from_absmag(m_v):
+    """
+    From an input satellite M_V, calculate the luminosity in solar units.
+    Assuming M*/LV = 1.6 for dSphs (Woo+2008), infer the stellar mass.
+
+    L_V/L_Sun = 10^[(M_V,Sun-M_V)/2.5]
+
+    Parameters
+    ----------
+    m_v : `float`
+        Luminosity (V-band absolute magnitude) of the satellite
+
+    Returns
+    -------
+    mstars : `float`
+        Stellar mass of the satellite in solar masses
+
+    """
+
+    mv_sun = 4.83
+
+    m_to_l = 1.6
+
+    lv = 10.0**((mv_sun-m_v)/2.5)
+    mstars = m_to_l * lv
+
+    return mstars
+
+
+def sb_rh_to_mv(sb, rh, distance):
+    """
+    From an input surface brightness and half-light radius, calculate
+    the absolute magnitude. Assumes a circular dwarf (i.e., radius, not a).
+
+    Parameters
+    ----------
+    sb : `float`, mag/arcsec**2
+        Surface brightness within r_half (in mag/arcsec**2) of the satellite
+    rh : `float`, pc
+        Half-light radius (in pc) of the satellite
+    distance : `float`, pc
+        Distance to the satellite (in pc)
+
+    Returns
+    -------
+    M_v : `float`
+        Absolute luminosity (V-band absolute magnitude) of the satellite
+
+    """
+
+    r_over_d_radians = rh/distance
+    r_over_d_arcsec = np.rad2deg(r_over_d_radians)*3600.0
+    area_arcsec = np.pi * (r_over_d_arcsec**2)
+    mv = sb - 2.5*np.log10(area_arcsec)
+    M_V = mv - 5.0*np.log10(distance) + 5.0
+    return M_V
+
+
+def sb_mv_to_rh(sb, M_v, distance):
+    """
+    From an input surface brightness and half-light radius, calculate
+    the absolute magnitude. Assumes a circular dwarf (i.e., radius, not a).
+
+    Parameters
+    ----------
+    sb : `float`, mag/arcsec**2
+        Surface brightness within r_half (in mag/arcsec**2) of the satellite
+    M_v : `float`
+        Absolute luminosity (V-band absolute magnitude) of the satellite
+    distance : `float`, pc
+        Distance to the satellite (in pc)
+
+    Returns
+    -------
+    rh : `float`, pc
+        Half-light radius (in pc) of the satellite
+
+    """
+    mv = M_v + 5.0*np.log10(distance) - 5.0
+    rh_over_distance_arcsec = np.sqrt((10.0**((sb-mv)/2.5))/np.pi)
+    rh_over_distance_deg = rh_over_distance_arcsec/3600.0
+    rh_over_distance_rad = np.deg2rad(rh_over_distance_deg)
+    rh = rh_over_distance_rad * distance
+    return rh
