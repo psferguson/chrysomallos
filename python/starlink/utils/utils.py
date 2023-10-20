@@ -8,6 +8,9 @@ __all__ = [
     "mag_at_flux_percentile",
     "rad_physical_to_sky",
     "get_flux_in_annulus",
+    "sb_rh_to_mv", 
+    "sb_mv_to_rh", 
+    "mstar_from_absmag"
 ]
 
 
@@ -57,8 +60,10 @@ def totmag_below_maglim(mags, maglim):
     """
 
     select_mags = (mags >= maglim)
-    mag_below_threshold = totmag(mags[select_mags])
-
+    if select_mags.sum() > 1:
+        mag_below_threshold = totmag(mags[select_mags])
+    else:
+        return 40
     return mag_below_threshold
 
 
