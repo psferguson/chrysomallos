@@ -173,7 +173,7 @@ def get_flux_in_annulus(image, xpos, ypos, r_inner, r_outer):
     return totflux
 
 
-def mstar_from_absmag(m_v):
+def mstar_from_absmag(m_v, m_to_l=1.6):
     """
     From an input satellite M_V, calculate the luminosity in solar units.
     Assuming M*/LV = 1.6 for dSphs (Woo+2008), infer the stellar mass.
@@ -184,6 +184,8 @@ def mstar_from_absmag(m_v):
     ----------
     m_v : `float`
         Luminosity (V-band absolute magnitude) of the satellite
+    m_to_l : `float` (default: 1.6)
+        Stellar mass to (V-band) light for a dSph.
 
     Returns
     -------
@@ -193,8 +195,6 @@ def mstar_from_absmag(m_v):
     """
 
     mv_sun = 4.83
-
-    m_to_l = 1.6
 
     lv = 10.0**((mv_sun-m_v)/2.5)
     mstars = m_to_l * lv
