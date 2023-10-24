@@ -8,8 +8,8 @@ __all__ = [
     "mag_at_flux_percentile",
     "rad_physical_to_sky",
     "get_flux_in_annulus",
-    "sb_rh_to_mv", 
-    "sb_mv_to_rh", 
+    "sb_rh_to_mv",
+    "sb_mv_to_rh",
     "mstar_from_absmag"
 ]
 
@@ -176,6 +176,35 @@ def get_flux_in_annulus(image, xpos, ypos, r_inner, r_outer):
     picksel = (rad > r_inner_pix) & (rad < r_outer_pix)
     totflux = np.sum(image.image.array[picksel])
     return totflux
+
+
+def absmag_from_mstar(mstars, m_to_l=1.6):
+    """
+    From an input satellite stellar mass, calculate the absolute magnitude.
+    Assuming M*/LV = 1.6 for dSphs (Woo+2008).
+
+    L_V/L_Sun = 10^[(M_V,Sun-M_V)/2.5]
+
+    Parameters
+    ----------
+    m_v : `float`
+        Luminosity (V-band absolute magnitude) of the satellite
+    m_to_l : `float` (default: 1.6)
+        Stellar mass to (V-band) light for a dSph.
+
+    Returns
+    -------
+    mstars : `float`
+        Stellar mass of the satellite in solar masses
+
+    """
+
+    mv_sun = 4.83
+
+    lv = mstars / m_to_l
+    m_v = mv_sun - 2.5*np.log10(lv)
+
+    return m_v
 
 
 def mstar_from_absmag(m_v, m_to_l=1.6):
