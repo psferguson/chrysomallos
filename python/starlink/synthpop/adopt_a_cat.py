@@ -8,6 +8,7 @@ import pandas as pd
 from starlink.utils import (totmag, totmag_below_maglim, fluxfrac_above_maglim,
                    mag_at_flux_percentile, rad_physical_to_sky)
 from .artpop_source import MISTSersicSSPStarlink
+from starlink.utils.log import logger
 
 __all__ = [
     "adopt_a_cat",
@@ -16,11 +17,10 @@ __all__ = [
 
 
 def adopt_a_cat(wcs, bbox,
-                # xcen, ycen,
                 age=10.0, feh=-2.0, mass=5.0e5, dist=2.0, r_scale=300.0,
                 ellip=0, theta = 0, n = 1 ,
                 mag_limit=36.0, mag_limit_band='LSST_g',
-		        random_seed=None,
+		        random_seed=None,**kwargs
                 ):
     """Make a synthetic source catalog to inject into an image.
 
@@ -30,9 +30,9 @@ def adopt_a_cat(wcs, bbox,
         The wcs object associated with the image to inject into.
     bbox : `bbox object`
         The bounding box object associated with the image to inject into.
-    xcen : `float`
+    x_cen : `float`
         X-coordinate to center the dwarf on (between 0-4000)
-    ycen : `float`
+    y_cen : `float`
         Y-coordinate to center the dwarf on (between 0-4000)
     age : `float`
         Age in Gyr
@@ -143,9 +143,9 @@ def adopt_a_cat(wcs, bbox,
     return cat
 
 
-def massage_the_cat(cat_inp, injection_maglim, band_for_injection,
-                    xcen, ycen, wcs, bbox,
-                    r_scale=300.0, dist=2.0):
+def massage_the_cat(cat_inp, mag_limit, band_for_injection,
+                    wcs, bbox, x_cen, y_cen, 
+                    r_scale=300.0, dist=2.0, **kwargs):
     """Replace the total flux below some mag limit with the
          appropriate Sersic model.
 
@@ -157,9 +157,9 @@ def massage_the_cat(cat_inp, injection_maglim, band_for_injection,
         Magnitude limit below which the flux will be replaced by a Sersic model
     band_for_injection : `str`
         Band of the image that you're going to inject into
-    xcen : `float`
+    x_cen : `float`
         X-coordinate to center the dwarf on (between 0-4000)
-    ycen : `float`
+    y_cen : `float`
         Y-coordinate to center the dwarf on (between 0-4000)
     wcs : `wcs object`
         The wcs object associated with the image to inject into.
@@ -179,18 +179,21 @@ def massage_the_cat(cat_inp, injection_maglim, band_for_injection,
     cat : `Astropy Table`
         A catalog containing the simulated dwarf.
     """
-
+    # check if catalog has any entries
+    if len(cat_inp) < 1:
+        raise RuntimeError("catalog must contain entries")
     # Calculate the total mag below the mag limit.
     # Reduce the original catalog to only stars above the magnitude limit.
     # Append the Sersic model for the remaining flux.
 
     band = band_for_injection+'_mag'
-    mag_for_sersic = totmag_below_maglim(cat_inp[band], injection_maglim)
-
+   
+    mag_for_sersic = totmag_below_maglim(cat_inp[band], mag_limit)
+    logger.info(f"massage a cat mag limit {mag_limit}, sersic component {mag_for_sersic} mag")
     # Replicate the magnitude column for the band you want to inject into:
     cat_inp['mag'] = cat_inp[band]
 
-    cat = cat_inp[cat_inp['mag'] <= injection_maglim]
+    cat = cat_inp[cat_inp['mag'] <= mag_limit]
 
     # Parameters for simulated dwarf:
     # r_scale = r_scale*u.pc
@@ -207,8 +210,8 @@ def massage_the_cat(cat_inp, injection_maglim, band_for_injection,
     # Using a fixed injection image size of 2000x2000 for now
     dwarfcen_x = 1000
     dwarfcen_y = 1000
-    xxx = xycoords_inp[0] - dwarfcen_x + xcen
-    yyy = xycoords_inp[1] - dwarfcen_y + ycen
+    xxx = xycoords_inp[0] - dwarfcen_x + x_cen
+    yyy = xycoords_inp[1] - dwarfcen_y + y_cen
     radec_coords_stars = wcs.pixelToSkyArray(xxx, yyy, degrees=True)
     cat['ra'] = radec_coords_stars[0]
     cat['dec'] = radec_coords_stars[1]
@@ -218,15 +221,17 @@ def massage_the_cat(cat_inp, injection_maglim, band_for_injection,
 
     x0 = bbox.beginX
     y0 = bbox.beginY
-    xcoord = xcen + x0
-    ycoord = ycen + y0
+    xcoord = x_cen + x0
+    ycoord = y_cen + y0
     radec_coords = wcs.pixelToSky(float(xcoord), float(ycoord))
 
     cat[-1]['ra'] = radec_coords[0].asDegrees()
     cat[-1]['dec'] = radec_coords[1].asDegrees()
     cat[-1]['mag'] = mag_for_sersic
-    cat[-1]['source_type'] = 'Sersic'
-
+    try:
+        cat[-1]['source_type'] = 'Sersic'
+    except:
+        import pdb; pdb.set_trace()
     # I think instead of including distance, I need to convert the radius
     # into a sky radius instead of physical. CHECK THIS!
     cat[-1]['distance'] = dist

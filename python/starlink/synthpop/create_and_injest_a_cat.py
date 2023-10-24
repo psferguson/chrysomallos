@@ -36,6 +36,8 @@ class DwarfConfig():
     x_cen: float
     # Y-coordinate of the object's center [pixel]
     y_cen: float
+    sb: float
+    m_v: float
     # Age of the object [Gyr]
     age: float = 10.0
     # Metallicity of the object [Fe/H]
@@ -58,8 +60,10 @@ class DwarfConfig():
     mag_limit_band: str = "LSST_g"
     # Seed for random number generation (for reproducibility)
     random_seed: int = None
+    # 
+
     
-    def __post_init__(self, dwarf_dict=None):
+    def __post_init__(self, dwarf_dict=None, **kwargs):
         """
         Initialize the class with the given dwarf dictionary.
         
@@ -94,25 +98,34 @@ class CreateDwarfInjectionCatalog():
         for dwarf in self.dwarfs:
             self.dwarf_configs.append(DwarfConfig(**dwarf))
     
-    def run(self, ingest=False):
+    def run(self, ingest=False,coadd_dict=None):
         """
         Main method to run the dwarf injection catalog creation process.
         """
         self.get_data_ids()
-        self.butler = Butler(self.repo, collections=self.collection)
-        # grab deepCoaddd
-        self.get_coadds()
+
+        if coadd_dict:
+            self.coadd_dict = coadd_dict
+            self.wcs = self.coadd_dict["g"].getWcs()
+            self.bbox = self.coadd_dict['g'].getBBox()
+        else:
+            self.butler = Butler(self.repo, collections=self.collection)
+            # grab deepCoaddd
+            self.get_coadds()
         self.dwarf_cats=[]
         # generate xy catalog for each dwarf
         for dwarf_config in self.dwarf_configs:
+            new_config=vars(dwarf_config).copy()
+            new_config["mag_limit"]=36
             self.dwarf_cats.append(
                 adopt_a_cat(wcs = self.wcs, 
                             bbox = self.bbox, 
-                            r_scale = dwarf_config.r_scale, 
-                            n = dwarf_config.n, 
-                            ellip = dwarf_config.ellip,
-                            theta = dwarf_config.theta, 
-                            random_seed = dwarf_config.random_seed,
+                            **new_config
+                            # r_scale = dwarf_config.r_scale, 
+                            # n = dwarf_config.n, 
+                            # ellip = dwarf_config.ellip,
+                            # theta = dwarf_config.theta, 
+                            # random_seed = dwarf_config.random_seed,
                 )
             )
        
@@ -125,14 +138,10 @@ class CreateDwarfInjectionCatalog():
             for band in self.bands: 
                 self.injection_cats[band].append(
                     massage_the_cat(cat_inp=cat, 
-                                    injection_maglim=self.dwarf_configs[i].mag_limit,
                                     band_for_injection = band,
-                                    xcen = self.dwarf_configs[i].x_cen, 
-                                    ycen = self.dwarf_configs[i].y_cen, 
                                     wcs = self.wcs,
                                     bbox = self.bbox,
-                                    r_scale=self.dwarf_configs[i].r_scale,
-                                    dist = self.dwarf_configs[i].dist
+                                    **vars(self.dwarf_configs[i])
                                     )
                 )
         for band in self.bands: 
@@ -144,6 +153,7 @@ class CreateDwarfInjectionCatalog():
             )
         else:
             logger.info("not ingesting catalogs to change use self.run(ingest=True)")
+            return self.injection_cats
         
     def get_data_ids(self, tract=9615, patch=3):
         """
