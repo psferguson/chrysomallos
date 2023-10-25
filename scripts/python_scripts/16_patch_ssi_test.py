@@ -66,26 +66,26 @@ if __name__ == "__main__":
             
         repo="/repo/main"
 
-        butler = Butler(repo, collections=collection)
-        bands=["g"]
-        for band in bands:
-            dataid = {'band': band, 'skymap': 'hsc_rings_v1', 'tract': 9615, 'patch': 3}
-            coadd_dict = {}
-            coadd_dict[band] = butler.get('deepCoadd_calexp', dataId=dataid)
-            for mag_lim in mag_lim_vals:
-                injection_catalog_collections = [f"u/pferguso/maglim_16_test/maglim_{mag_lim}_round_1"]
-                injection_catalog_refs =  butler.registry.get("injection_catalog", 
-                                                             collections=injection_catalog_collections,
-                                                             where=f"band='{band}'")
-                injection_catalogs = [butler.get(ref) for ref in injection_catalog_refs]
-                inject_config = si.CoaddInjectConfig()
-                inject_task = si.CoaddInjectTask(config=inject_config)
-                inject_output = inject_task.run(
-                    injection_catalogs=injection_catalogs,
-                    input_exposure=coadd_dict[band].clone(),
-                    psf=coadd_dict[band].getPsf(),
-                    photo_calib=coadd_dict[band].getPhotoCalib(),
-                    wcs=coadd_dict[band].getWcs(),
-                )
-        si_coadd_g_lim28 = inject_output_lim28.output_exposure
-        si_cat_out_g_lim28 = inject_output_lim28.output_catalog
+        # butler = Butler(repo, collections=collection)
+        # bands=["g"]
+        # for band in bands:
+        #     dataid = {'band': band, 'skymap': 'hsc_rings_v1', 'tract': 9615, 'patch': 3}
+        #     coadd_dict = {}
+        #     coadd_dict[band] = butler.get('deepCoadd_calexp', dataId=dataid)
+        #     for mag_lim in mag_lim_vals:
+        #         injection_catalog_collections = [f"u/pferguso/maglim_16_test/maglim_{mag_lim}_round_1"]
+        #         injection_catalog_refs =  butler.registry.get("injection_catalog", 
+        #                                                      collections=injection_catalog_collections,
+        #                                                      where=f"band='{band}'")
+        #         injection_catalogs = [butler.get(ref) for ref in injection_catalog_refs]
+        #         inject_config = si.CoaddInjectConfig()
+        #         inject_task = si.CoaddInjectTask(config=inject_config)
+        #         inject_output = inject_task.run(
+        #             injection_catalogs=injection_catalogs,
+        #             input_exposure=coadd_dict[band].clone(),
+        #             psf=coadd_dict[band].getPsf(),
+        #             photo_calib=coadd_dict[band].getPhotoCalib(),
+        #             wcs=coadd_dict[band].getWcs(),
+        #         )
+        # si_coadd_g_lim28 = inject_output_lim28.output_exposure
+        # si_cat_out_g_lim28 = inject_output_lim28.output_catalog

@@ -36,8 +36,8 @@ class DwarfConfig():
     x_cen: float
     # Y-coordinate of the object's center [pixel]
     y_cen: float
-    sb: float
-    m_v: float
+    sb: float = np.nan
+    m_v: float = np.nan
     # Age of the object [Gyr]
     age: float = 10.0
     # Metallicity of the object [Fe/H]
@@ -241,4 +241,4 @@ if __name__ == "__main__":
         
 
     creator=CreateDwarfInjectionCatalog(config_dict)
-    creator.run(injest=False)
+    creator.run(ingest=False)
