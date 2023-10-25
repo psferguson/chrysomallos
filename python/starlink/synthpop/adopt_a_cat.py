@@ -19,7 +19,7 @@ __all__ = [
 
 def adopt_a_cat(wcs, bbox,
                 age=10.0, feh=-2.0, mass=5.0e5, dist=2.0, r_scale=300.0,
-                ellip=0, theta=0, n=1, m_v=None,
+                ellip=0, theta=0, n=1, M_V=None,
                 mag_limit=36.0, mag_limit_band='LSST_g',
 		        random_seed=None, **kwargs
                 ):
