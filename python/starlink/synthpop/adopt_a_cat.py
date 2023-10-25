@@ -31,10 +31,6 @@ def adopt_a_cat(wcs, bbox,
         The wcs object associated with the image to inject into.
     bbox : `bbox object`
         The bounding box object associated with the image to inject into.
-    x_cen : `float`
-        X-coordinate to center the dwarf on (between 0-4000)
-    y_cen : `float`
-        Y-coordinate to center the dwarf on (between 0-4000)
     age : `float`
         Age in Gyr
     feh : `float`
