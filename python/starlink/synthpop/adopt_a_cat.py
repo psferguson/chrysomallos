@@ -64,10 +64,7 @@ def adopt_a_cat(wcs, bbox,
     """
 
     # use this random state for reproducibility
-    if random_seed is None:
-        rand = np.random.RandomState()
-    else:
-        rand = np.random.RandomState(random_seed)
+    np.random.seed(random_seed)
 
     # Note: we have assume rscale = r_half. I _think_ this is true for the
     #   projected half-light radius and Plummer scale radius...
@@ -93,7 +90,6 @@ def adopt_a_cat(wcs, bbox,
         n=n,
         phot_system='LSST', # photometric system
         imf='kroupa', # default imf
-        random_state=rand, # random state (can be set for reproducibility)
         xy_dim=xydim, # half the size of an LSST patch
         pixel_scale=pixel_scale, # pixel scale of input image
         mag_limit=mag_limit,
