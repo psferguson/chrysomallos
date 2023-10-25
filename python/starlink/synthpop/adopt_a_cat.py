@@ -6,7 +6,8 @@ from dustmaps.sfd import SFDQuery
 import numpy as np
 import pandas as pd
 from starlink.utils import (totmag, totmag_below_maglim, fluxfrac_above_maglim,
-                   mag_at_flux_percentile, rad_physical_to_sky)
+                            mag_at_flux_percentile, rad_physical_to_sky,
+                            mstar_from_absmag)
 from .artpop_source import MISTSersicSSPStarlink
 from starlink.utils.log import logger
 
@@ -18,9 +19,9 @@ __all__ = [
 
 def adopt_a_cat(wcs, bbox,
                 age=10.0, feh=-2.0, mass=5.0e5, dist=2.0, r_scale=300.0,
-                ellip=0, theta = 0, n = 1 ,
+                ellip=0, theta=0, n=1, m_v=None,
                 mag_limit=36.0, mag_limit_band='LSST_g',
-		        random_seed=None,**kwargs
+		        random_seed=None, **kwargs
                 ):
     """Make a synthetic source catalog to inject into an image.
 
@@ -50,12 +51,15 @@ def adopt_a_cat(wcs, bbox,
         position angle in deg
     n: `float`
         sersic index
+    M_V: `float`
+        Absolute V-band mag of dwarf to inject. Overrides "mass" if both are
+        given as inputs. If not set, "mass" is a required input.
     mag_limit : `float`
         Faintest mag of stars to include
     mag_limit_band : `str`
         Band to apply mag_limit in
     random_seed: `int`
-	if not None this sets the random seed to generate catalog with
+	    if not None this sets the random seed to generate catalog with
 
     Returns
     -------
@@ -65,7 +69,7 @@ def adopt_a_cat(wcs, bbox,
 
     # use this random state for reproducibility
     if random_seed is None:
-    	rand = np.random.RandomState()
+        rand = np.random.RandomState()
     else:
         rand = np.random.RandomState(random_seed)
 
@@ -77,6 +81,9 @@ def adopt_a_cat(wcs, bbox,
     pixel_scale = wcs.getPixelScale().asArcseconds()
     # If the image is 2k x 2k, the dwarf will be centered at 1000, 1000
     xydim = 1999
+
+    if M_V is not None:
+        mass = mstar_from_absmag(M_V)
 
     # create the artpop stellar population
     ssp = MISTSersicSSPStarlink(
@@ -144,7 +151,7 @@ def adopt_a_cat(wcs, bbox,
 
 
 def massage_the_cat(cat_inp, mag_limit, band_for_injection,
-                    wcs, bbox, x_cen, y_cen, 
+                    wcs, bbox, x_cen, y_cen,
                     r_scale=300.0, dist=2.0, **kwargs):
     """Replace the total flux below some mag limit with the
          appropriate Sersic model.
@@ -187,7 +194,7 @@ def massage_the_cat(cat_inp, mag_limit, band_for_injection,
     # Append the Sersic model for the remaining flux.
 
     band = band_for_injection+'_mag'
-   
+
     mag_for_sersic = totmag_below_maglim(cat_inp[band], mag_limit)
     logger.info(f"massage a cat mag limit {mag_limit}, sersic component {mag_for_sersic} mag")
     # Replicate the magnitude column for the band you want to inject into:
