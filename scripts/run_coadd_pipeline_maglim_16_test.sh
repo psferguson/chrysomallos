@@ -19,6 +19,6 @@ do
             -p pipelines/DRP-RC2+injection_by_peter.yaml#inject_coadd \
             -d "instrument='HSC' AND skymap='hsc_rings_v1' AND
             tract=9615 AND patch=3 AND (band = '$band') " \
-            -j 6
+            -j 16
         done
 done
