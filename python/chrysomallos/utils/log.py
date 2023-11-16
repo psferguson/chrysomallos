@@ -6,7 +6,7 @@ import logging
 from astropy.logger import AstropyLogger
 
 
-class StarlinkLogger(AstropyLogger):
+class ChrysomallosLogger(AstropyLogger):
 
     def _set_defaults(self, level='INFO'):
         """
@@ -56,6 +56,6 @@ class StreamHandler(logging.StreamHandler):
         print(": " + record.message, file=stream)
 
 
-logging.setLoggerClass(StarlinkLogger)
-logger = logging.getLogger('Starlink Logger')
+logging.setLoggerClass(ChrysomallosLogger)
+logger = logging.getLogger('chrysomallosLogger')
 logger._set_defaults()
