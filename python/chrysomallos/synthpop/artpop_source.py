@@ -18,12 +18,12 @@ from artpop.util import check_units, check_xy_dim
 from .spatial_sampler import sersic_xy
 
 __all__ = [
-    "SersicSPStarlink",
-    "MISTSersicSSPStarlink",
+    "SersicSPChrysomallos",
+    "MISTSersicSSPChrysomallos",
 ]
 
 
-class SersicSPStarlink(Source):
+class SersicSPChrysomallos(Source):
     """
     Stellar population with a Sersic spatial distribution.
 
@@ -87,15 +87,15 @@ class SersicSPStarlink(Source):
 
         self.xy_kw = dict(num_stars=sp.num_stars, r_eff=r_eff, n=n,
                           theta=theta, ellip=ellip, distance=sp.distance,
-                          xy_dim=xy_dim, num_r_eff=num_r_eff, dx=x_0+ dx, 
+                          xy_dim=xy_dim, num_r_eff=num_r_eff, dx=x_0+ dx,
                           dy=y_0 + dy,
                           pixel_scale=pixel_scale, random_state=sp.rng)
 
         _xy = sersic_xy(**self.xy_kw)
 
-        super(SersicSPStarlink, self).__init__(
+        super(SersicSPChrysomallos, self).__init__(
             _xy, sp.mag_table, xy_dim, pixel_scale, labels)
-    
+
     def mag_to_image_amplitude(self, m_tot, zpt):
         """
         Convert total magnitude into amplitude parameter for the smooth model.
@@ -137,9 +137,9 @@ def _check_label_type(ssp, label_type, has_phases=True):
             raise Exception(f'{label_type} is not a valid label type.')
     else:
         labels = None
-    return labels       
-     
-class MISTSersicSSPStarlink(SersicSPStarlink):
+    return labels
+
+class MISTSersicSSPChrysomallos(SersicSPChrysomallos):
     """
     MIST simple stellar population with a Sersic spatial distribution. This
     is a convenience class that combines `~artpop.space.sersic_xy` and
@@ -244,7 +244,7 @@ class MISTSersicSSPStarlink(SersicSPStarlink):
         ssp = MISTSSP(**self.ssp_kw)
         labels = _check_label_type(ssp, label_type)
 
-        super(MISTSersicSSPStarlink, self).__init__(
+        super(MISTSersicSSPChrysomallos, self).__init__(
             sp=ssp, r_eff=r_eff, n=n, theta=theta, ellip=ellip, xy_dim=xy_dim,
             pixel_scale=pixel_scale, num_r_eff=num_r_eff, dx=dx, dy=dy,
             labels=labels)

@@ -1,7 +1,7 @@
 import os
-import sys 
+import sys
 from math import ceil
-from starlink import DwarfConfig,CreateDwarfInjectionCatalog, sb_rh_to_mv, sb_mv_to_rh, mstar_from_absmag
+from chrysomallos import DwarfConfig,CreateDwarfInjectionCatalog, sb_rh_to_mv, sb_mv_to_rh, mstar_from_absmag
 import lsst.source.injection as si
 import numpy as np
 import matplotlib.pyplot as plt
@@ -10,8 +10,8 @@ import lsst.afw.display as afwDisplay
 afwDisplay.setDefaultBackend('matplotlib')
 from tqdm import tqdm
 import astropy.units as u
-import logging 
-logging.getLogger('Starlink Logger').setLevel(logging.CRITICAL)
+import logging
+logging.getLogger('chrysomallosLogger').setLevel(logging.CRITICAL)
 logging.getLogger('lsst.coaddInjectTask').setLevel(logging.CRITICAL)
 
 default_config_dict={
@@ -41,7 +41,7 @@ if __name__ == "__main__":
     collection='HSC/runs/RC2/w_2023_32/DM-40356'
     butler = Butler(repo, collections=collection)
     registry = butler.registry
-    
+
     mag_lim = 27
     x_cen=1500
     y_cen=2500
@@ -51,16 +51,16 @@ if __name__ == "__main__":
 
     new_config_dict=default_config_dict.copy()
     new_config_dict["inject_cat_collection"] = f"test"
-    
+
     bands=["g"]
     for band in bands:
         dataid = {'band': band, 'skymap': 'hsc_rings_v1', 'tract': 9615, 'patch': 3}
         image_dict = {}
         image_dict[band] = butler.get('deepCoadd_calexp', dataId=dataid)
-    
+
     wcs=image_dict["g"].getWcs()
     bbox=image_dict["g"].getBBox()
-    
+
     catalogs={}
     j=0
 
@@ -91,14 +91,14 @@ if __name__ == "__main__":
 
 
 
-            new_config_dict["dwarfs"]=dwarf_dicts 
+            new_config_dict["dwarfs"]=dwarf_dicts
             creator=CreateDwarfInjectionCatalog(new_config_dict)
             tmp_catalog=creator.run(ingest=False,coadd_dict=image_dict)["g"]
             x_pix,y_pix = wcs.skyToPixelArray(tmp_catalog['ra'], tmp_catalog['dec'], degrees=True)
             sel = ((abs(x_pix-x_cen-bbox.beginX) < 400) &  (abs(y_pix-y_cen-bbox.beginY) < 400)) | (tmp_catalog["source_type"]=="Sersic")
             new_catalog_dict={"config":new_config_dict,"catalog":tmp_catalog[sel]}
             catalogs[j]=new_catalog_dict
-    # plot samples    
+    # plot samples
     x=[catalogs[i]["config"]["dwarfs"][0]["r_scale"] for i in catalogs.keys()]
     y=[catalogs[i]["config"]["dwarfs"][0]["m_v"] for i in catalogs.keys()]
     plt.figure()
@@ -108,12 +108,12 @@ if __name__ == "__main__":
     plt.xlabel("log r_scale")
     plt.ylabel("MV")
     plt.savefig("./parameters_space_MV_logr.png")
-    
-    
-    
+
+
+
     inject_config = si.CoaddInjectConfig()
     inject_task = si.CoaddInjectTask(config=inject_config)
-    
+
     # injection
     for i in tqdm(catalogs.keys()):
         inject_output = inject_task.run(
@@ -124,7 +124,7 @@ if __name__ == "__main__":
             wcs=image_dict['g'].getWcs(),
         )
         catalogs[i]["image"]=inject_output.output_exposure
-    
+
     # create plot
     minx=bbox.beginX
     miny=bbox.beginY
@@ -150,10 +150,10 @@ if __name__ == "__main__":
     #for i in tqdm(np.array([1,2,3,4])*4):
         scale=ceil(i / 4)
         plt.sca(axs[3+i])
-        
+
         display0 = afwDisplay.Display(frame=fig)
         display0.scale('linear', min=-0.10, max=1/scale)
-        
+
         display0.mtv(catalogs[i]["image"].image[minx+x_cen-300:minx+x_cen+300, y_cen-300:y_cen+300])
         title_str=f'log_rh={catalogs[i]["config"]["dwarfs"][0]["r_scale"]:0.0f} pc, '
         title_str+=f'Mv={catalogs[i]["config"]["dwarfs"][0]["m_v"]:0.1f}, '

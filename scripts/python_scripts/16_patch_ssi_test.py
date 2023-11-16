@@ -1,5 +1,5 @@
 import os
-from starlink import DwarfConfig,CreateDwarfInjectionCatalog
+from chrysomallos import DwarfConfig,CreateDwarfInjectionCatalog
 import lsst.source.injection as si
 
 default_config_dict={
@@ -38,7 +38,7 @@ if __name__ == "__main__":
         print("outpath exists")
     else:
         os.mkdir(outpath)
-        
+
     for mag_lim in mag_lim_vals:
         i += 1
         print(i)
@@ -56,14 +56,14 @@ if __name__ == "__main__":
                 dwarf_dict['y_cen'] = y_cen
                 dwarf_dict['random_seed'] = 10 * j
                 dwarf_dicts.append(dwarf_dict)
-        new_config_dict["dwarfs"]=dwarf_dicts 
+        new_config_dict["dwarfs"]=dwarf_dicts
         ingest = False
         if ingest = True:
             creator=CreateDwarfInjectionCatalog(new_config_dict)
-        
+
             creator.save_config(f"./16_patch_configs/231011_16_maglim_{mag_lim}_round_{rnd}")
             creator.run(ingest=True)
-            
+
         repo="/repo/main"
 
         # butler = Butler(repo, collections=collection)
@@ -74,7 +74,7 @@ if __name__ == "__main__":
         #     coadd_dict[band] = butler.get('deepCoadd_calexp', dataId=dataid)
         #     for mag_lim in mag_lim_vals:
         #         injection_catalog_collections = [f"u/pferguso/maglim_16_test/maglim_{mag_lim}_round_1"]
-        #         injection_catalog_refs =  butler.registry.get("injection_catalog", 
+        #         injection_catalog_refs =  butler.registry.get("injection_catalog",
         #                                                      collections=injection_catalog_collections,
         #                                                      where=f"band='{band}'")
         #         injection_catalogs = [butler.get(ref) for ref in injection_catalog_refs]

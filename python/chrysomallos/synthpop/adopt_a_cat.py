@@ -5,11 +5,11 @@ from astropy.coordinates import SkyCoord
 from dustmaps.sfd import SFDQuery
 import numpy as np
 import pandas as pd
-from starlink.utils import (totmag, totmag_below_maglim, fluxfrac_above_maglim,
+from chrysomallos.utils import (totmag, totmag_below_maglim, fluxfrac_above_maglim,
                             mag_at_flux_percentile, rad_physical_to_sky,
                             mstar_from_absmag)
-from .artpop_source import MISTSersicSSPStarlink
-from starlink.utils.log import logger
+from .artpop_source import MISTSersicSSPChrysomallos
+from chrysomallos.utils.log import logger
 
 __all__ = [
     "adopt_a_cat",
