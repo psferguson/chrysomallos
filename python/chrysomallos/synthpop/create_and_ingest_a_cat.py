@@ -19,6 +19,8 @@ default_config_dict={
     "repo" : "/repo/main",
     "collection" : 'HSC/runs/RC2/w_2023_32/DM-40356',
     "bands" : ["g","r","i"],
+    "tract" : 9615,
+    "patch" : 3,
     "dwarfs": []
     }
 
@@ -98,11 +100,11 @@ class CreateDwarfInjectionCatalog():
         for dwarf in self.dwarfs:
             self.dwarf_configs.append(DwarfConfig(**dwarf))
 
-    def run(self, ingest=False,coadd_dict=None):
+    def run(self, ingest=False, coadd_dict=None):
         """
         Main method to run the dwarf injection catalog creation process.
         """
-        self.get_data_ids()
+        self.get_data_ids(tract=self.tract, patch=self.patch)
 
         if coadd_dict:
             self.coadd_dict = coadd_dict
