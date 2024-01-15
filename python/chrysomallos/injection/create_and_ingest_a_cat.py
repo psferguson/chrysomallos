@@ -10,6 +10,12 @@ from lsst.daf.butler.registry import MissingCollectionError
 
 from chrysomallos.injection import adopt_a_cat, massage_the_cat
 from chrysomallos.utils.log import logger
+from chrysomallos.utils.utils import (
+    mstar_from_absmag,
+    rh_mv_to_sb,
+    sb_mv_to_rh,
+    sb_rh_to_mv,
+)
 
 default_config_dict = {
     "repo": "/repo/main",
@@ -36,8 +42,10 @@ class DwarfConfig:
     x_cen: float
     # Y-coordinate of the object's center [pixel]
     y_cen: float
+    # surface brightness
     sb: float = np.nan
-    m_v: float = np.nan
+    # absolute magnitude
+    Mv: float = np.nan
     # Age of the object [Gyr]
     age: float = 10.0
     # Metallicity of the object [Fe/H]
@@ -45,9 +53,9 @@ class DwarfConfig:
     # Stellar mass of the object [Msolar]
     stellar_mass: float = 5.0e5
     # Distance to the object [Mpc]
-    dist: float = 2.0
+    dist: float = np.nan
     # Scale radius of the object [pc]
-    r_scale: float = 100
+    r_scale: float = np.nan
     # Ellipticity of the object (0-1)
     ellip: float = 0
     # Orientation angle of the object
@@ -74,6 +82,29 @@ class DwarfConfig:
         # check that values are not bad
         if (self.ellip < 0) or (self.ellip > 1):
             raise RuntimeError(f"ellip must be between 0 and 1 : {self.ellip}")
+        if (
+            np.isnan(self.Mv)
+            and not np.isnan(self.r_scale)
+            and not np.isnan(self.sb)
+            and not np.isnan(self.dist)
+        ):
+            self.Mv = sb_rh_to_mv(sb=self.sb, rh=self.r_scale, distance=self.dist)
+        if (
+            np.isnan(self.r_scale)
+            and not np.isnan(self.Mv)
+            and not np.isnan(self.sb)
+            and not np.isnan(self.dist)
+        ):
+            self.Mv = sb_mv_to_rh(sb=self.sb, M_v=self.Mv, distance=self.dist)
+        if (
+            np.isnan(self.sb)
+            and not np.isnan(self.Mv)
+            and not np.isnan(self.r_scale)
+            and not np.isnan(self.dist)
+        ):
+            self.sb = rh_mv_to_sb(rh=self.r_scale, M_v=self.Mv, distance=self.dist)
+        if np.isnan(self.mass) and not np.isnan(self.Mv):
+            self.mass = mstar_from_absmag(self.mV)
 
 
 class CreateDwarfInjectionCatalog:
