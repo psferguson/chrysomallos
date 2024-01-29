@@ -4,14 +4,13 @@ from astropy.coordinates import SkyCoord
 from astropy.table import Table
 from dustmaps.sfd import SFDQuery
 
+from chrysomallos.synthpop.artpop_source import MISTSersicSSPChrysomallos
 from chrysomallos.utils import (
     mstar_from_absmag,
     rad_physical_to_sky,
     totmag_below_maglim,
 )
 from chrysomallos.utils.log import logger
-
-from .artpop_source import MISTSersicSSPChrysomallos
 
 __all__ = [
     "adopt_a_cat",
