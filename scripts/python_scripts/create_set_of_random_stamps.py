@@ -33,6 +33,9 @@ from chrysomallos.utils import mstar_from_absmag, sb_mv_to_rh
 #         out = p.map(generate_photometry,inputs)
 #     else:
 #         out = [generate_photometry(arg) for arg in inputs]
+
+
+# Create base class for full catalog injection
 @dataclass
 class stampConfig:
     # DEEP COADD
@@ -57,7 +60,7 @@ class stampConfig:
     ellip_range: List[float] = field(default_factory=lambda: [0, 0.5])
     x_cen_range: List[float] = field(default_factory=lambda: [300, 3800])
     y_cen_range: List[float] = field(default_factory=lambda: [300, 3800])
-
+    # ToDo: sersic index
     # injection info
     mag_lim: float = 29
 
@@ -167,7 +170,7 @@ if __name__ == "__main__":
     if args.n_dwarfs is not None:
         stamp_config.n_dwarfs = args.n_dwarfs
 
-    stamp_config.n_dwarfs = 10
+    stamp_config.n_dwarfs = 500
     # setup butler
     butler = Butler(stamp_config.repo, collections=stamp_config.collection)
 
@@ -190,7 +193,8 @@ if __name__ == "__main__":
 
     # generate dwarf properties and then save to csv
     dwarf_param_frame = sample_dwarf_params(stamp_config)
+    # To Do: put runid in stamp config
+    dwarf_param_frame.to_csv("./dwarf_params_v1.csv", index=False)
 
-# tract, patch, id, dist, x_cen, y_cen, r_scale, sb, mag_limit, m_v, mass, random_seed
 
 # generate all injection catalogs for that tract for each catalog we need
