@@ -5,34 +5,47 @@ from dataclasses import dataclass, field
 from inspect import signature
 from typing import List
 
+import numpy as np
+
 
 @dataclass
 class BaseConfig:
-    # DEEP COADD
-    # repository path
-    repo: str = "/repo/main"
-    # collection string
-    collection: str = "HSC/runs/RC2/w_2023_32/DM-40356"
-    # bands for injection
-    bands: List[str] = field(default_factory=lambda: ["g", "r", "i"])
-    # skymap
-    skymap: str = "hsc_rings_v1"
-    # tract to use
-    tract: int = 9615
-    # patch to use
-    patch: int = 3
+    # currently only support DEEP COADD, should we change for visit?
+    pipelines: dict = field(
+        default_factory=lambda: {
+            # repository path
+            "repo": "/repo/main",
+            # collection string
+            "input_collection": "HSC/runs/RC2/w_2023_32/DM-40356",
+            # bands for injection
+            "bands": ["g", "r", "i"],
+            # skymap
+            "skymap": "hsc_rings_v1",
+            # tract to use
+            "tract": 9615,
+            # patch to use
+            "patch": 3,
+        }
+    )
 
     # ranges to sample over
-    n_dwarfs: int = 0
-    dist_range: List[float] = field(default_factory=lambda: [2, 3])
-    Mv_range: List[float] = field(default_factory=lambda: [-5, -11])
-    sb_range: List[float] = field(default_factory=lambda: [24, 27])
-    ellip_range: List[float] = field(default_factory=lambda: [0, 0.5])
-    x_cen_range: List[float] = field(default_factory=lambda: [300, 3800])
-    y_cen_range: List[float] = field(default_factory=lambda: [300, 3800])
+    sampling: dict = field(
+        default_factory=lambda: {
+            # sampler to use for parameter generation
+            # will default to this unless specified
+            "default_sampler": np.random.uniform,
+            "n_dwarfs": np.nan,
+            "m_v": [np.nan],
+            "sb": [np.nan],
+            "ellip_range": [np.nan],
+            "x_cen": [np.nan],
+            "y_cen": [np.nan],
+        }
+    )
+    injection: dict = field(default_factory=lambda: {"mag_lim": 29.0})
+
     # ToDo: sersic index
     # injection info
-    mag_lim: float = 29
 
     @classmethod
     def from_kwargs(cls, **kwargs):
@@ -70,6 +83,13 @@ class InjectConfig(BaseConfig):
 @dataclass
 class StampConfig(BaseConfig):
     ingest: bool = False
+    n_dwarfs: int = 0
+    dist_range: List[float] = field(default_factory=lambda: [2, 3])
+    Mv_range: List[float] = field(default_factory=lambda: [-5, -11])
+    sb_range: List[float] = field(default_factory=lambda: [24, 27])
+    ellip_range: List[float] = field(default_factory=lambda: [0, 0.5])
+    x_cen_range: List[float] = field(default_factory=lambda: [300, 3800])
+    y_cen_range: List[float] = field(default_factory=lambda: [300, 3800])
     # generator: sample_params
     stamp_x_size: int = 600
     stamp_y_size: int = 600
