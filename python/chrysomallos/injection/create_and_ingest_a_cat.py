@@ -1,36 +1,34 @@
 import argparse
-import astropy.table as atable
-import astropy.units as u
-import numpy as np
-from tqdm import tqdm
-import yaml
 from dataclasses import dataclass
 
-
+import astropy.table as atable
+import lsst.source.injection as si
+import numpy as np
+import yaml
 from lsst.daf.butler import Butler, CollectionType
 from lsst.daf.butler.registry import MissingCollectionError
-import lsst.source.injection as si
 
-from chrysomallos.synthpop import adopt_a_cat, massage_the_cat
+from chrysomallos.injection import adopt_a_cat, massage_the_cat
 from chrysomallos.utils.log import logger
 
+default_config_dict = {
+    "repo": "/repo/main",
+    "collection": "HSC/runs/RC2/w_2023_32/DM-40356",
+    "bands": ["g", "r", "i"],
+    "tract": 9615,
+    "patch": 3,
+    "dwarfs": [],
+}
 
-default_config_dict={
-    "repo" : "/repo/main",
-    "collection" : 'HSC/runs/RC2/w_2023_32/DM-40356',
-    "bands" : ["g","r","i"],
-    "tract" : 9615,
-    "patch" : 3,
-    "dwarfs": []
-    }
 
 @dataclass
-class DwarfConfig():
+class DwarfConfig:
     """
     Configuration class for a dwarf galaxy.
     Sets various properties of the dwarf galaxy, including its location,
     age, metallicity, and other parameters.
     """
+
     # DEFAULT PARAMETERS
     # ID of the injection cat
     id: int
@@ -64,7 +62,6 @@ class DwarfConfig():
     random_seed: int = None
     #
 
-
     def __post_init__(self, dwarf_dict=None, **kwargs):
         """
         Initialize the class with the given dwarf dictionary.
@@ -78,12 +75,14 @@ class DwarfConfig():
         if (self.ellip < 0) or (self.ellip > 1):
             raise RuntimeError(f"ellip must be between 0 and 1 : {self.ellip}")
 
-class CreateDwarfInjectionCatalog():
+
+class CreateDwarfInjectionCatalog:
     """
     Class to create an injection catalog for dwarf galaxies.
     Processes configuration data, fetches coadd from butler,
     and creates catalogs ready for injection, then ingests into butler.
     """
+
     def __init__(self, config_dict=default_config_dict):
         """
         Initialize the class with the given configuration dictionary.
@@ -109,25 +108,26 @@ class CreateDwarfInjectionCatalog():
         if coadd_dict:
             self.coadd_dict = coadd_dict
             self.wcs = self.coadd_dict["g"].getWcs()
-            self.bbox = self.coadd_dict['g'].getBBox()
+            self.bbox = self.coadd_dict["g"].getBBox()
         else:
             self.butler = Butler(self.repo, collections=self.collection)
             # grab deepCoaddd
             self.get_coadds()
-        self.dwarf_cats=[]
+        self.dwarf_cats = []
         # generate xy catalog for each dwarf
         for dwarf_config in self.dwarf_configs:
-            new_config=vars(dwarf_config).copy()
-            new_config["mag_limit"]=36
+            new_config = vars(dwarf_config).copy()
+            new_config["mag_limit"] = 36
             self.dwarf_cats.append(
-                adopt_a_cat(wcs = self.wcs,
-                            bbox = self.bbox,
-                            **new_config
-                            # r_scale = dwarf_config.r_scale,
-                            # n = dwarf_config.n,
-                            # ellip = dwarf_config.ellip,
-                            # theta = dwarf_config.theta,
-                            # random_seed = dwarf_config.random_seed,
+                adopt_a_cat(
+                    wcs=self.wcs,
+                    bbox=self.bbox,
+                    **new_config
+                    # r_scale = dwarf_config.r_scale,
+                    # n = dwarf_config.n,
+                    # ellip = dwarf_config.ellip,
+                    # theta = dwarf_config.theta,
+                    # random_seed = dwarf_config.random_seed,
                 )
             )
 
@@ -139,19 +139,21 @@ class CreateDwarfInjectionCatalog():
         for i, cat in enumerate(self.dwarf_cats):
             for band in self.bands:
                 self.injection_cats[band].append(
-                    massage_the_cat(cat_inp=cat,
-                                    band_for_injection = band,
-                                    wcs = self.wcs,
-                                    bbox = self.bbox,
-                                    **vars(self.dwarf_configs[i])
-                                    )
+                    massage_the_cat(
+                        cat_inp=cat,
+                        band_for_injection=band,
+                        wcs=self.wcs,
+                        bbox=self.bbox,
+                        **vars(self.dwarf_configs[i]),
+                    )
                 )
         for band in self.bands:
             self.injection_cats[band] = atable.vstack(self.injection_cats[band])
         if ingest:
-            self.ingest_injection_catalogs(si_input_collection = self.inject_cat_collection,
-                                            catalogs = self.injection_cats,
-                                            bands = self.bands
+            self.ingest_injection_catalogs(
+                si_input_collection=self.inject_cat_collection,
+                catalogs=self.injection_cats,
+                bands=self.bands,
             )
         else:
             logger.info("not ingesting catalogs to change use self.run(ingest=True)")
@@ -170,7 +172,12 @@ class CreateDwarfInjectionCatalog():
         """
         self.dataid_dict = {}
         for band in self.bands:
-            self.dataid_dict[band] = {'band': band, 'skymap': 'hsc_rings_v1', 'tract': tract, 'patch': patch}
+            self.dataid_dict[band] = {
+                "band": band,
+                "skymap": "hsc_rings_v1",
+                "tract": tract,
+                "patch": patch,
+            }
 
     def get_coadds(self):
         """
@@ -178,14 +185,16 @@ class CreateDwarfInjectionCatalog():
         """
         self.coadd_dict = {}
         for band in self.bands:
-            n_dataid=len(self.dataid_dict[band])
+            n_dataid = len(self.dataid_dict[band])
             # currently this only grabs one coadd per band?
             # if  n_dataid > 1:
             #     msg = f'{n_dataid} calexp data ids in {band}-band only using first one'
             #     logger.warning(msg)
-            self.coadd_dict[band] = self.butler.get('deepCoadd_calexp', dataId=self.dataid_dict[band])
+            self.coadd_dict[band] = self.butler.get(
+                "deepCoadd_calexp", dataId=self.dataid_dict[band]
+            )
         self.wcs = self.coadd_dict["g"].getWcs()
-        self.bbox = self.coadd_dict['g'].getBBox()
+        self.bbox = self.coadd_dict["g"].getBBox()
 
     def ingest_injection_catalogs(self, si_input_collection, catalogs, bands):
         """
@@ -200,7 +209,7 @@ class CreateDwarfInjectionCatalog():
         bands : list
             List of bands to consider.
         """
-        writeable_butler =  Butler(self.repo, writeable=True)
+        writeable_butler = Butler(self.repo, writeable=True)
         try:
             writeable_butler.removeRuns([si_input_collection])
         except MissingCollectionError:
@@ -208,7 +217,9 @@ class CreateDwarfInjectionCatalog():
             pass
         else:
             logger.info("Prior RUN collection located and successfully removed")
-        _ = writeable_butler.registry.registerCollection(si_input_collection, type=CollectionType.RUN)
+        _ = writeable_butler.registry.registerCollection(
+            si_input_collection, type=CollectionType.RUN
+        )
 
         self.injection_cat_refs = {}
         for band in bands:
@@ -217,13 +228,15 @@ class CreateDwarfInjectionCatalog():
                 table=catalogs[band],
                 band=band,
                 output_collection=si_input_collection,
-                dataset_type_name='injection_catalog'
+                dataset_type_name="injection_catalog",
             )
+
     def save_config(self, filename):
-        yaml_dict=vars(self).copy()
-        del yaml_dict['dwarf_configs']
-        with open(filename, 'w') as file:
+        yaml_dict = vars(self).copy()
+        del yaml_dict["dwarf_configs"]
+        with open(filename, "w") as file:
             yaml.dump(yaml_dict, file)
+
 
 if __name__ == "__main__":
     """
@@ -232,7 +245,9 @@ if __name__ == "__main__":
     and runs the dwarf injection catalog creation.
     """
     config_dict = default_config_dict.copy()
-    parser = argparse.ArgumentParser(description="Description of your script/functionality.")
+    parser = argparse.ArgumentParser(
+        description="Description of your script/functionality."
+    )
     parser.add_argument("filename", help="name of config.yaml file")
     args = parser.parse_args()
 
@@ -241,6 +256,5 @@ if __name__ == "__main__":
         for key, value in user_config_dict.items():
             config_dict[key] = value
 
-
-    creator=CreateDwarfInjectionCatalog(config_dict)
+    creator = CreateDwarfInjectionCatalog(config_dict)
     creator.run(ingest=False)
