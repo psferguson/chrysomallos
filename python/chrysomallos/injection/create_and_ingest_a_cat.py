@@ -42,8 +42,8 @@ class DwarfConfig:
     age: float = 10.0
     # Metallicity of the object [Fe/H]
     feh: float = -2.0
-    # Mass of the object [Msolar]
-    mass: float = 5.0e5
+    # Stellar mass of the object [Msolar]
+    stellar_mass: float = 5.0e5
     # Distance to the object [Mpc]
     dist: float = 2.0
     # Scale radius of the object [pc]

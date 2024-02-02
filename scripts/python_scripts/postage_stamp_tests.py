@@ -27,7 +27,7 @@ default_dwarf_dict={ 'id': 0,
                      'y_cen': 1000,
                      'age': 10.0,
                      'feh': -2.0,
-                     'mass': 500000.0,
+                     'stellar_mass': 500000.0,
                      'dist': 4.0,
                      'r_scale': 200,
                      'ellip': 0,
@@ -66,9 +66,9 @@ if __name__ == "__main__":
 
 
     for sb in tqdm(surface_brighness_vals[:]):
-        for mV in mV_vals:
-            r_h = sb_mv_to_rh(sb,mV, distance=2e6)
-            mass = mstar_from_absmag(mV)
+        for m_v in mV_vals:
+            r_h = sb_mv_to_rh(sb, m_v, distance=2e6)
+            stellar_mass = mstar_from_absmag(m_v)
 
             dwarf_dicts=[]
             new_config_dict=default_config_dict.copy()
@@ -84,12 +84,10 @@ if __name__ == "__main__":
             dwarf_dict["sb"]=sb
             dwarf_dict['mag_limit']=mag_lim
 
-            dwarf_dict["m_v"]=mV
+            dwarf_dict["m_v"]=m_v
 
 
-            dwarf_dict["mass"]=mass
-
-
+            dwarf_dict["stellar_mass"]=stellar_mass
 
             new_config_dict["dwarfs"]=dwarf_dicts
             creator=CreateDwarfInjectionCatalog(new_config_dict)

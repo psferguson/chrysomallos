@@ -260,8 +260,8 @@ def sb_rh_to_mv(sb, rh, distance):
     r_over_d_radians = rh/distance
     r_over_d_arcsec = np.rad2deg(r_over_d_radians)*3600.0
     area_arcsec = np.pi * (r_over_d_arcsec**2)
-    mv = sb - 2.5*np.log10(area_arcsec)
-    M_V = mv - 5.0*np.log10(distance) + 5.0
+    m_v = sb - 2.5*np.log10(area_arcsec)
+    M_V = m_v - 5.0*np.log10(distance) + 5.0
     return M_V
 
 
@@ -285,8 +285,8 @@ def sb_mv_to_rh(sb, M_v, distance):
         Half-light radius (in pc) of the satellite
 
     """
-    mv = M_v + 5.0*np.log10(distance) - 5.0
-    rh_over_distance_arcsec = np.sqrt((10.0**((sb-mv)/2.5))/np.pi)
+    m_v = M_v + 5.0*np.log10(distance) - 5.0
+    rh_over_distance_arcsec = np.sqrt((10.0**((sb-m_v)/2.5))/np.pi)
     rh_over_distance_deg = rh_over_distance_arcsec/3600.0
     rh_over_distance_rad = np.deg2rad(rh_over_distance_deg)
     rh = rh_over_distance_rad * distance

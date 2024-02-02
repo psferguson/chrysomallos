@@ -23,13 +23,13 @@ def adopt_a_cat(
     bbox,
     age=10.0,
     feh=-2.0,
-    mass=5.0e5,
+    stellar_mass=5.0e5,
     dist=2.0,
     r_scale=300.0,
     ellip=0,
     theta=0,
     n=1,
-    M_V=None,
+    m_v=None,
     mag_limit=36.0,
     mag_limit_band="LSST_g",
     random_seed=None,
@@ -47,7 +47,7 @@ def adopt_a_cat(
         Age in Gyr
     feh : `float`
         [Fe/H]
-    mass : `float`
+    stellar_mass : `float`
         Total stellar mass in M_Sun
     dist : `float`
         Distance in Mpc
@@ -59,9 +59,9 @@ def adopt_a_cat(
         position angle in deg
     n: `float`
         sersic index
-    M_V: `float`
-        Absolute V-band mag of dwarf to inject. Overrides "mass" if both are
-        given as inputs. If not set, "mass" is a required input.
+    m_v: `float`
+        Absolute V-band mag of dwarf to inject. Overrides "stellar_mass" if
+        both are given as inputs. If not set, "stellar_mass" is a required input.
     mag_limit : `float`
         Faintest mag of stars to include
     mag_limit_band : `str`
@@ -87,14 +87,14 @@ def adopt_a_cat(
     # If the image is 2k x 2k, the dwarf will be centered at 1000, 1000
     xydim = 1999
 
-    if M_V is not None:
-        mass = mstar_from_absmag(M_V)
+    if m_v is not None:
+        stellar_mass = mstar_from_absmag(m_v)
 
     # create the artpop stellar population
     ssp = MISTSersicSSPChrysomallos(
         log_age=np.log10(age * 1e9),
         feh=feh,
-        total_mass=mass,
+        total_mass=stellar_mass,
         distance=dist,
         r_eff=r_scale,
         ellip=ellip,

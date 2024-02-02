@@ -29,19 +29,19 @@ class CatalogCreator:
         return image_dict
 
     def create_catalogs(
-        self, surface_brighness_vals, mV_vals, dist, x_cen, y_cen, mag_lim
+        self, surface_brighness_vals, mv_vals, dist, x_cen, y_cen, mag_lim
     ):
         wcs = self.image_dict["g"].getWcs()
         bbox = self.image_dict["g"].getBBox()
         j = 0
 
         for sb in tqdm(surface_brighness_vals[:]):
-            for mV in mV_vals:
+            for m_v in mv_vals:
                 r_h = sb_mv_to_rh(
-                    sb, mV, distance=2e6
+                    sb, m_v, distance=2e6
                 )  # Assuming this function is defined elsewhere
-                mass = mstar_from_absmag(
-                    mV
+                stellar_mass = mstar_from_absmag(
+                    m_v
                 )  # Assuming this function is defined elsewhere
 
                 dwarf_dicts = []
@@ -58,8 +58,8 @@ class CatalogCreator:
                         "r_scale": r_h,
                         "sb": sb,
                         "mag_limit": mag_lim,
-                        "m_v": mV,
-                        "mass": mass,
+                        "m_v": m_v,
+                        "stellar_mass": stellar_mass,
                     }
                 )
 
@@ -88,10 +88,10 @@ class CatalogCreator:
         return self.catalogs
 
     def _create_catalog_for_params(self, params):
-        sb, mV, wcs, bbox, dist, x_cen, y_cen, mag_lim = params
+        sb, m_v, wcs, bbox, dist, x_cen, y_cen, mag_lim = params
 
-        r_h = sb_mv_to_rh(sb, mV, distance=2e6)
-        mass = mstar_from_absmag(mV)
+        r_h = sb_mv_to_rh(sb, m_v, distance=2e6)
+        stellar_mass = mstar_from_absmag(m_v)
 
         dwarf_dicts = []
         new_config_dict = self.default_config_dict.copy()
@@ -107,8 +107,8 @@ class CatalogCreator:
                 "r_scale": r_h,
                 "sb": sb,
                 "mag_limit": mag_lim,
-                "m_v": mV,
-                "mass": mass,
+                "m_v": m_v,
+                "stellar_mass": stellar_mass,
             }
         )
 
