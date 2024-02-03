@@ -106,6 +106,7 @@ def adopt_a_cat(
         pixel_scale=pixel_scale,  # pixel scale of input image
         mag_limit=mag_limit,
         mag_limit_band=mag_limit_band,
+        add_remnants=False,  # don't include stellar remnants in the total mass calculation
     )
 
     x0 = bbox.beginX
