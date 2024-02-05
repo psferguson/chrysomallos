@@ -45,7 +45,7 @@ class DwarfConfig:
     # surface brightness
     sb: float = np.nan
     # absolute magnitude
-    Mv: float = np.nan
+    m_v: float = np.nan
     # Age of the object [Gyr]
     age: float = 10.0
     # Metallicity of the object [Fe/H]
@@ -114,7 +114,7 @@ class CreateDwarfInjectionCatalog:
     and creates catalogs ready for injection, then ingests into butler.
     """
 
-    def __init__(self, config_dict=default_config_dict):
+    def __init__(self, config):
         """
         Initialize the class with the given configuration dictionary.
 
@@ -126,7 +126,7 @@ class CreateDwarfInjectionCatalog:
         """
         for key, value in config_dict.items():
             setattr(self, key, value)
-        self.dwarf_configs = []
+        self.dwarf_configs = []  # this should be a dataframe
         for dwarf in self.dwarfs:
             self.dwarf_configs.append(DwarfConfig(**dwarf))
 
