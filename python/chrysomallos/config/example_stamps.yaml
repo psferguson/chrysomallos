@@ -27,6 +27,6 @@ sampling:
     surface_brightness: [24,27,'linear']
     x_cen: [300,3800,'linear']
     y_cen: [300,3800,'linear']
-  output_file: "example_dwarf_params.csv"
+  output_file: "example_dwarf_params.fits"
   random_seed: null
   type: sample

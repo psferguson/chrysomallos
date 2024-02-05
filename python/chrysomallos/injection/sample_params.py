@@ -57,6 +57,7 @@ class DwarfParamSampler:
         self.dwarf_param_frame["patch"] = self.config["pipelines"]["patch"]
         self.dwarf_param_frame["dwarf_id"] = self.dwarf_param_frame.index
         # To Do:  mstar_from_absmag populate mstar/ra/dec
+        # To Do: reorder columns of data frame dwarf_id,tract,patch,x/y_cen,ra/dec...
         if write:
             logger.info("saving generated params")
             self.write_param_file()
@@ -90,7 +91,7 @@ class DwarfParamSampler:
         if ext == ".csv":
             self.dwarf_param_frame.to_csv(filename, index=False)
         elif ext == ".fits":
-            rec_arr = self.dwarf_param_frame.to_records()
+            rec_arr = self.dwarf_param_frame.to_records(index=False)
             fitsio.write(filename, rec_arr, clobber=True)
         else:
             raise Exception(f"bad filetype {ext}")
