@@ -10,7 +10,9 @@ __all__ = [
     "get_flux_in_annulus",
     "sb_rh_to_mv",
     "sb_mv_to_rh",
-    "mstar_from_absmag"
+    "mstar_from_absmag",
+    "sdss_g_to_V",
+    "dist_to_dmod",
 ]
 
 
@@ -260,8 +262,8 @@ def sb_rh_to_mv(sb, rh, distance):
     r_over_d_radians = rh/distance
     r_over_d_arcsec = np.rad2deg(r_over_d_radians)*3600.0
     area_arcsec = np.pi * (r_over_d_arcsec**2)
-    mv = sb - 2.5*np.log10(area_arcsec)
-    M_V = mv - 5.0*np.log10(distance) + 5.0
+    m_v = sb - 2.5*np.log10(area_arcsec)
+    M_V = m_v - 5.0*np.log10(distance) + 5.0
     return M_V
 
 
@@ -285,9 +287,49 @@ def sb_mv_to_rh(sb, M_v, distance):
         Half-light radius (in pc) of the satellite
 
     """
-    mv = M_v + 5.0*np.log10(distance) - 5.0
-    rh_over_distance_arcsec = np.sqrt((10.0**((sb-mv)/2.5))/np.pi)
+    m_v = M_v + 5.0*np.log10(distance) - 5.0
+    rh_over_distance_arcsec = np.sqrt((10.0**((sb-m_v)/2.5))/np.pi)
     rh_over_distance_deg = rh_over_distance_arcsec/3600.0
     rh_over_distance_rad = np.deg2rad(rh_over_distance_deg)
     rh = rh_over_distance_rad * distance
     return rh
+
+
+def dist_to_dmod(dist):
+    """
+    Convert distance to distance modulus.
+
+    Parameters
+    ----------
+    dist : `float`, pc
+        Distance to convert (in pc)
+
+    Returns
+    -------
+    dmod : `float`, mag
+        Distance modulus (m-M) corresponding to the input distance
+    """
+    dmod = 5.0*np.log10(dist)-5.0
+    return dmod
+
+
+def sdss_g_to_V(gmags, rmags):
+    """
+    Transform SDSS g, r mags to Johnson V.
+
+    Parameters
+    ----------
+    gmags, rmags : `float`, mag
+        Magnitudes in g, r bands (assumed to be SDSS)
+
+    Returns
+    -------
+    vmags : `float`, mag
+        V-band magnitudes in the Johnson-Cousins system
+
+    """
+    # https://www.sdss3.org/dr8/algorithms/sdssUBVRITransform.php
+    # Using the Jordi+ transform:
+    # V-g   =     (-0.565 ± 0.001)*(g-r) - (0.016 ± 0.001)
+    vmags = gmags - 0.565*(gmags-rmags) - 0.016
+    return vmags
