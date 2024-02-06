@@ -6,7 +6,7 @@ injection:
   stamp_size: [600,600]
 pipelines:
   bands: ['g','r','i']
-  input_collection: HSC/runs/RC2/w_2023_32/DM-40356
+  input_collections: HSC/runs/RC2/w_2023_32/DM-40356
   patch: 3
   repo: /repo/main
   skymap: hsc_rings_v1
@@ -22,11 +22,13 @@ sampling:
     m_v: [-11,-5,'linear']
     r_scale: null
     ra: null
-    sersic_index: 1
+    n: 1
+    theta: 0
     stellar_mass: null
     surface_brightness: [24,27,'linear']
     x_cen: [300,3800,'linear']
     y_cen: [300,3800,'linear']
+    random_seed_injection: null
   output_file: "example_dwarf_params.fits"
-  random_seed: null
+  random_seed_sampling: null
   type: sample

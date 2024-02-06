@@ -18,15 +18,14 @@ class DwarfParamSampler:
     Class for generating dwarf parameters:
     """
 
-    def __init__(self, config, seed=None):
+    def __init__(self, config):
         self.config = config
-        self.seed = seed
         # To Do: do we reading the bbox and adjust x/y_cen ranges?
 
     def run(self, write=True):
         sampling_config = self.config["sampling"]
-        if sampling_config["random_seed"] is not None:
-            np.random.seed(sampling_config["random_seed"])
+        if sampling_config["random_seed_sampling"] is not None:
+            np.random.seed(sampling_config["random_seed_sampling"])
 
         if sampling_config["type"] == "grid":
             raise (NotImplementedError)
@@ -55,7 +54,7 @@ class DwarfParamSampler:
         )
         self.dwarf_param_frame["tract"] = self.config["pipelines"]["tract"]
         self.dwarf_param_frame["patch"] = self.config["pipelines"]["patch"]
-        self.dwarf_param_frame["dwarf_id"] = self.dwarf_param_frame.index
+        self.dwarf_param_frame["id"] = self.dwarf_param_frame.index
         # To Do:  mstar_from_absmag populate mstar/ra/dec
         # To Do: reorder columns of data frame dwarf_id,tract,patch,x/y_cen,ra/dec...
         if write:

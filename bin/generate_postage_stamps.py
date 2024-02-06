@@ -39,5 +39,8 @@ if __name__ == "__main__":
         dwarf_params_frame = sampler.run()
 
     creator = CreateDwarfInjectionCatalog(config, dwarf_params_frame)
-    creator.run(ingest=False)
+    catalogs = creator.run(
+        ingest=False,
+    )
+
     logger.info("Done")
