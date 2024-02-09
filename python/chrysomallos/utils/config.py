@@ -55,6 +55,7 @@ default_dict = {
         "ingest": False,
         "stamp_size": [600, 600],
         "output_collection": None,
+        "type": None,  # either "grid" or "stamp"
     },
 }
 default_stamp_dict = {

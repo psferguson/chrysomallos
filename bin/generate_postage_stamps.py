@@ -1,7 +1,11 @@
 import argparse
 import os
 
-from chrysomallos.injection import CreateDwarfInjectionCatalog, DwarfParamSampler
+from chrysomallos.injection import (
+    CreateDwarfInjectionCatalog,
+    DwarfParamSampler,
+    PostageStampGenerator,
+)
 from chrysomallos.utils import Config, logger, read_data_file
 
 if __name__ == "__main__":
@@ -39,9 +43,18 @@ if __name__ == "__main__":
         dwarf_params_frame = sampler.run()
 
     creator = CreateDwarfInjectionCatalog(config, dwarf_params_frame)
-    catalogs = creator.run(
+    catalogs, coadd_dict = creator.run(
         ingest=False,
         multiproc=5,
     )
+    postage_stamp_generator = PostageStampGenerator(
+        config=config,
+        dwarf_params_frame=dwarf_params_frame,
+        dwarf_catalogs=catalogs,
+        coadd_dict=coadd_dict,
+    )
+    postage_stamp_generator.run()
+    import pdb
 
+    pdb.set_trace()
     logger.info("Done")

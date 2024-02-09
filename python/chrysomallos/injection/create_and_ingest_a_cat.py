@@ -194,36 +194,66 @@ class CreateDwarfInjectionCatalog:
         self.generate_catalogs(multiproc=multiproc)
 
         logger.info(f"generated catalogs for {len(self.dwarf_params_frame)} dwarfs")
-        # convert to ssi format and concatenate to single catalog per band
-        self.injection_cats = {}
-        for band in self.config["pipelines"]["bands"]:
-            self.injection_cats[band] = []
-        for i, cat in enumerate(self.dwarf_cats):
+
+        if self.config["injection"]["type"] == "grid":
+            # convert to ssi format and concatenate to single catalog per band
+            self.injection_cats = {}
             for band in self.config["pipelines"]["bands"]:
-                self.injection_cats[band].append(
-                    massage_the_cat(
+                self.injection_cats[band] = []
+            for i, cat in enumerate(self.dwarf_cats):
+                for band in self.config["pipelines"]["bands"]:
+                    self.injection_cats[band].append(
+                        massage_the_cat(
+                            cat_inp=cat,
+                            mag_limit=self.config["injection"]["mag_limit"],
+                            band_for_injection=band,
+                            wcs=self.wcs,
+                            bbox=self.bbox,
+                            x_cen=self.dwarf_params_frame["x_cen"][i],
+                            y_cen=self.dwarf_params_frame["y_cen"][i],
+                            r_scale=self.dwarf_params_frame["r_scale"][i],
+                            dist=self.dwarf_params_frame["distance"][i],
+                        )
+                    )
+            for band in self.config["pipelines"]["bands"]:
+                self.injection_cats[band] = atable.vstack(self.injection_cats[band])
+            if ingest:
+                self.ingest_injection_catalogs(
+                    si_input_collection=self.inject_cat_collection,
+                    catalogs=self.injection_cats,
+                    bands=self.config["pipelines"]["bands"],
+                )
+            else:
+                logger.info(
+                    "not ingesting catalogs to change use self.run(ingest=True)"
+                )
+
+        elif self.config["injection"]["type"] == "stamp":
+            # for each catalog in self.dwarf_cats, run massage_the_cat and
+            # save result as a dict where is key is the config never ingest
+            self.injection_cats = {
+                band: {} for band in self.config["pipelines"]["bands"]
+            }
+
+            for i, cat in enumerate(self.dwarf_cats):
+                for band in self.config["pipelines"]["bands"]:
+                    self.injection_cats[band][i] = massage_the_cat(
                         cat_inp=cat,
                         mag_limit=self.config["injection"]["mag_limit"],
                         band_for_injection=band,
-                        wcs=self.wcs,
-                        bbox=self.bbox,
+                        wcs=self.coadd_dict[band]["wcs"],
+                        bbox=self.coadd_dict[band]["bbox"],
                         x_cen=self.dwarf_params_frame["x_cen"][i],
                         y_cen=self.dwarf_params_frame["y_cen"][i],
                         r_scale=self.dwarf_params_frame["r_scale"][i],
                         dist=self.dwarf_params_frame["distance"][i],
                     )
-                )
-        for band in self.config["pipelines"]["bands"]:
-            self.injection_cats[band] = atable.vstack(self.injection_cats[band])
-        if ingest:
-            self.ingest_injection_catalogs(
-                si_input_collection=self.inject_cat_collection,
-                catalogs=self.injection_cats,
-                bands=self.config["pipelines"]["bands"],
-            )
         else:
-            logger.info("not ingesting catalogs to change use self.run(ingest=True)")
-            return self.injection_cats
+            raise Exception(
+                f"unknown injection type: {self.config['injection']['type']}"
+            )
+
+        return self.injection_cats, self.coadd_dict
 
     def generate_catalogs(self, multiproc=False):
         self.config["injection"]["mag_limit_band"]
@@ -233,11 +263,12 @@ class CreateDwarfInjectionCatalog:
         gen_args = list(
             zip(
                 rows,
-                r_len * [self.wcs],
-                r_len * [self.bbox],
+                r_len * [self.coadd_dict[self.config["pipelines"]["bands"][0]]["wcs"]],
+                r_len * [self.coadd_dict[self.config["pipelines"]["bands"][0]]["bbox"]],
                 r_len * [self.config["injection"]["mag_limit_band"]],
             )
         )
+
         if multiproc:
             from multiprocessing import Pool
 
@@ -302,18 +333,13 @@ class CreateDwarfInjectionCatalog:
         """
         Fetch coadd data based on the specified bands and data IDs.
         """
-        self.coadd_dict = {}
+        # TODO: think about converting to static method and putting in utils
+        self.coadd_dict = {band: {} for band in self.config["pipelines"]["bands"]}
         for band in self.config["pipelines"]["bands"]:
-            n_dataid = len(self.dataid_dict[band])
-            # currently this only grabs one coadd per band?
-            # if  n_dataid > 1:
-            #     msg = f'{n_dataid} calexp data ids in {band}-band only using first one'
-            #     logger.warning(msg)
-            self.coadd_dict[band] = self.butler.get(
-                "deepCoadd_calexp", dataId=self.dataid_dict[band]
-            )
-        self.wcs = self.coadd_dict["g"].getWcs()
-        self.bbox = self.coadd_dict["g"].getBBox()
+            image = self.butler.get("deepCoadd_calexp", dataId=self.dataid_dict[band])
+            self.coadd_dict[band]["image"] = image
+            self.coadd_dict[band]["wcs"] = image.getWcs()
+            self.coadd_dict[band]["bbox"] = image.getBBox()
 
     def ingest_injection_catalogs(self, si_input_collection, catalogs, bands):
         """

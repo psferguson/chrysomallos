@@ -4,6 +4,7 @@ injection:
   mag_limit: 29
   mag_limit_band: LSST_g
   stamp_size: [600,600]
+  type: stamp
 pipelines:
   bands: ['g','r','i']
   input_collections: HSC/runs/RC2/w_2023_32/DM-40356
