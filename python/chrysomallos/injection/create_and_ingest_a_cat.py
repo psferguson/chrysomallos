@@ -166,10 +166,11 @@ class CreateDwarfInjectionCatalog:
         # for dwarf in self.dwarfs:
         #     self.dwarf_configs.append(DwarfConfig(**dwarf))
 
-    def run(self, ingest=False, coadd_dict=None):
+    def run(self, ingest=False, coadd_dict=None, multiproc=False):
         """
         Main method to run the dwarf injection catalog creation process.
         """
+
         self.get_data_ids(
             tract=self.config["pipelines"]["tract"],
             patch=self.config["pipelines"]["patch"],
@@ -189,32 +190,9 @@ class CreateDwarfInjectionCatalog:
             self.get_coadds()
         self.dwarf_cats = []
         # generate xy catalog for each dwarf
-        # To Do: this loop would be a good place to parallel process
-        for index, row in self.dwarf_params_frame.iterrows():
-            if np.isnan(row["random_seed_injection"]) | (
-                row["random_seed_injection"] is None
-            ):
-                random_seed = None
-            else:
-                random_seed = int(row["random_seed_injection"])
-            self.dwarf_cats.append(
-                adopt_a_cat(
-                    wcs=self.wcs,
-                    bbox=self.bbox,
-                    age=row["age"],
-                    feh=row["feh"],
-                    stellar_mass=row["stellar_mass"],
-                    dist=row["distance"],
-                    r_scale=row["r_scale"],
-                    ellip=row["ellipticity"],
-                    theta=row["theta"],
-                    n=row["n"],
-                    m_v=row["m_v"],
-                    mag_limit=36,  # notice this is set to be deeper
-                    mag_limit_band=self.config["injection"]["mag_limit_band"],
-                    random_seed=random_seed,
-                )
-            )
+
+        self.generate_catalogs(multiproc=multiproc)
+
         logger.info(f"generated catalogs for {len(self.dwarf_params_frame)} dwarfs")
         # convert to ssi format and concatenate to single catalog per band
         self.injection_cats = {}
@@ -246,6 +224,59 @@ class CreateDwarfInjectionCatalog:
         else:
             logger.info("not ingesting catalogs to change use self.run(ingest=True)")
             return self.injection_cats
+
+    def generate_catalogs(self, multiproc=False):
+        self.config["injection"]["mag_limit_band"]
+
+        rows = self.dwarf_params_frame.to_dict(orient="records")
+        r_len = len(rows)
+        gen_args = list(
+            zip(
+                rows,
+                r_len * [self.wcs],
+                r_len * [self.bbox],
+                r_len * [self.config["injection"]["mag_limit_band"]],
+            )
+        )
+        if multiproc:
+            from multiprocessing import Pool
+
+            processes = multiproc if multiproc > 0 else None
+            p = Pool(processes, maxtasksperchild=1)
+            out = p.map(self.generate_single_catalog, gen_args)
+        else:
+            out = [self.generate_single_catalog(args) for args in gen_args]
+
+        self.dwarf_cats = out
+
+    @staticmethod
+    def generate_single_catalog(args):
+        row, wcs, bbox, mag_limit_band = args
+
+        if np.isnan(row["random_seed_injection"]) | (
+            row["random_seed_injection"] is None
+        ):
+            random_seed = None
+        else:
+            random_seed = int(row["random_seed_injection"])
+
+        catalog = adopt_a_cat(
+            wcs=wcs,
+            bbox=bbox,
+            age=row["age"],
+            feh=row["feh"],
+            stellar_mass=row["stellar_mass"],
+            dist=row["distance"],
+            r_scale=row["r_scale"],
+            ellip=row["ellipticity"],
+            theta=row["theta"],
+            n=row["n"],
+            m_v=row["m_v"],
+            mag_limit=36,  # notice this is set to be deeper
+            mag_limit_band=mag_limit_band,
+            random_seed=random_seed,
+        )
+        return catalog
 
     def get_data_ids(self, tract=9615, patch=3):
         """

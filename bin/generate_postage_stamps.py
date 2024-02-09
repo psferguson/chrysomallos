@@ -41,6 +41,7 @@ if __name__ == "__main__":
     creator = CreateDwarfInjectionCatalog(config, dwarf_params_frame)
     catalogs = creator.run(
         ingest=False,
+        multiproc=5,
     )
 
     logger.info("Done")
