@@ -56,4 +56,5 @@ if __name__ == "__main__":
     )
 
     postage_stamp_generator.run()
+    # postage_stamp_generator.generate_empty_stamps(10)
     logger.info("Done")

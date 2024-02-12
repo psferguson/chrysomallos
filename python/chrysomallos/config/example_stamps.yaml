@@ -36,7 +36,7 @@ sampling:
 stamp:
   directory: ./stamps/
   size: [600,600]
-  title_format: hsc_stamp_d_{:.1f}_mv_{:.1f}_sb_{:.1f}_r_{:0.0f}.png
+  title_format: hsc_stamp_r1
   Q: 10
   stretch: 0.5
   minimum: 0

@@ -1,8 +1,10 @@
+import os
 import time
 
 import fitsio
 import lsst.source.injection as si
 import matplotlib.pyplot as plt
+import numpy as np
 from astropy.visualization import make_lupton_rgb
 from tqdm import tqdm
 
@@ -21,8 +23,10 @@ class PostageStampGenerator:
         self.dwarf_params_frame = dwarf_params_frame
 
     def run(self):
-        # for each catalog in dwarf catalogs inject in each band and save fits file with each band as
-        # a different extension use fitsio to save the fits file
+        # check that directory exists
+        os.makedirs(self.config["stamp"]["directory"], exist_ok=True)
+
+        # setup injection task
         inject_config = si.CoaddInjectConfig()
         inject_task = si.CoaddInjectTask(config=inject_config)
 
@@ -83,11 +87,12 @@ class PostageStampGenerator:
 
             title = self.make_stamp_title(
                 stamp_directory=self.config["stamp"]["directory"],
-                stamp_title_format=self.config["stamp"]["title_format"],
-                distance=self.dwarf_params_frame["distance"][i],
-                m_v=self.dwarf_params_frame["m_v"][i],
-                sb=self.dwarf_params_frame["surface_brightness"][i],
-                r_scale=self.dwarf_params_frame["r_scale"][i],
+                stamp_title_prefix=self.config["stamp"]["title_format"],
+                tract=self.config["pipelines"]["tract"],
+                patch=self.config["pipelines"]["patch"],
+                dwarf_id=i,
+                ra=self.dwarf_params_frame["ra"][i],
+                dec=self.dwarf_params_frame["dec"][i],
             )
 
             self.make_one_stamp_png(
@@ -102,6 +107,67 @@ class PostageStampGenerator:
             cat_length = len(self.dwarf_catalogs[band][i])
             logger.info(
                 f"Time to create stamp with {cat_length} sources: {end_time - start_time:0.2f} seconds"
+            )
+
+    def generate_empty_stamps(self, n_stamps):
+        stamp_x_size = self.config["stamp"]["size"][0]
+        stamp_y_size = self.config["stamp"]["size"][1]
+        tract = self.config["pipelines"]["tract"]
+        patch = self.config["pipelines"]["patch"]
+
+        fig, ax = self.create_axes_for_stamps(
+            stamp_x_size=stamp_x_size, stamp_y_size=stamp_y_size, dpi=100
+        )
+        x_cen = np.random.uniform(
+            self.config["sampling"]["params"]["x_cen"][0],
+            self.config["sampling"]["params"]["x_cen"][1],
+            n_stamps,
+        )
+        y_cen = np.random.uniform(
+            self.config["sampling"]["params"]["y_cen"][0],
+            self.config["sampling"]["params"]["y_cen"][1],
+            n_stamps,
+        )
+        for i in range(n_stamps):
+            injection_dict = {}
+
+            for band in self.config["pipelines"]["bands"]:
+                # get ra/dec from wcs
+                ra, dec = self.coadd_dict[band]["wcs"].pixelToSky(
+                    float(x_cen[i]), float(y_cen[i])
+                )
+                # make title
+                title = (
+                    self.config["stamp"]["directory"]
+                    + f"empty_stamp_{tract}_{patch}_{i}_{ra}_{dec}.png"
+                )
+
+                # stamp parameters
+                minx = self.coadd_dict[band]["bbox"].beginX
+                miny = self.coadd_dict[band]["bbox"].beginY
+                stamp_range = [
+                    minx + x_cen[i] - int(stamp_x_size / 2),
+                    minx + x_cen[i] + int(stamp_x_size / 2),
+                    miny + y_cen[i] - int(stamp_y_size / 2),
+                    miny + y_cen[i] + int(stamp_y_size / 2),
+                ]
+
+                injection_dict[band] = (
+                    self.coadd_dict[band]["image"]
+                    .clone()
+                    .image[
+                        stamp_range[0] : stamp_range[1], stamp_range[2] : stamp_range[3]
+                    ]
+                    .array
+                )
+
+            self.make_one_stamp_png(
+                injection_dict=injection_dict,
+                title=title,
+                Q=self.config["stamp"]["Q"],
+                stretch=self.config["stamp"]["stretch"],
+                minimum=self.config["stamp"]["minimum"],
+                ax=ax,
             )
 
     def crop_injection_catalog(
@@ -148,14 +214,15 @@ class PostageStampGenerator:
     def make_stamp_title(
         self,
         stamp_directory,
-        distance,
-        m_v,
-        sb,
-        r_scale,
-        stamp_title_format="hsc_stamp_d_{}_mv_{}_sb_{}_r_{}.png",
+        stamp_title_prefix,
+        tract,
+        patch,
+        dwarf_id,
+        ra,
+        dec,
     ):
-        filename = stamp_directory
-        filename += stamp_title_format.format(distance, m_v, sb, r_scale)
+        filename = stamp_directory + stamp_title_prefix
+        filename += f"{tract}_{patch}_{dwarf_id}_{ra:0.2f}_{dec:0.2f}.png"
         return filename
 
     def save_stamp_as_fits(self, stamp_directory, title, injection_dict):
