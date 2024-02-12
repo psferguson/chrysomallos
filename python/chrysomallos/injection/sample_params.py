@@ -6,10 +6,38 @@ import fitsio
 import numpy as np
 import pandas as pd
 
-from chrysomallos.utils import logger, rh_mv_to_sb, sb_mv_to_rh, sb_rh_to_mv
+from chrysomallos.utils import (
+    get_coadd_dict,
+    logger,
+    mstar_from_absmag,
+    rh_mv_to_sb,
+    sb_mv_to_rh,
+    sb_rh_to_mv,
+)
 
 __all__ = [
     "DwarfParamSampler",
+]
+
+OUT_ORDER = [
+    "id",
+    "tract",
+    "patch",
+    "x_cen",
+    "y_cen",
+    "ra",
+    "dec",
+    "distance",
+    "m_v",
+    "surface_brightness",
+    "ellipticity",
+    "theta",
+    "age",
+    "feh",
+    "stellar_mass",
+    "r_scale",
+    "n",
+    "random_seed_injection",
 ]
 
 
@@ -18,8 +46,9 @@ class DwarfParamSampler:
     Class for generating dwarf parameters:
     """
 
-    def __init__(self, config):
+    def __init__(self, config, coadd_dict=None):
         self.config = config
+        self.coadd_dict = get_coadd_dict(coadd_dict=coadd_dict, config=self.config)
         # To Do: do we reading the bbox and adjust x/y_cen ranges?
 
     def run(self, write=True):
@@ -55,8 +84,17 @@ class DwarfParamSampler:
         self.dwarf_param_frame["tract"] = self.config["pipelines"]["tract"]
         self.dwarf_param_frame["patch"] = self.config["pipelines"]["patch"]
         self.dwarf_param_frame["id"] = self.dwarf_param_frame.index
-        # To Do:  mstar_from_absmag populate mstar/ra/dec
-        # To Do: reorder columns of data frame dwarf_id,tract,patch,x/y_cen,ra/dec...
+        # get mstar_from_absmag populate mstar
+        self.dwarf_param_frame["stellar_mass"] = mstar_from_absmag(
+            self.dwarf_param_frame["m_v"]
+        )
+        # get ra/dec
+        ra, dec = self._populate_ra_dec()
+
+        self.dwarf_param_frame["ra"] = ra
+        self.dwarf_param_frame["dec"] = dec
+
+        self.dwarf_param_frame = self.dwarf_param_frame[OUT_ORDER]
         if write:
             logger.info("saving generated params")
             self.write_param_file()
@@ -114,3 +152,18 @@ class DwarfParamSampler:
         else:
             raise Exception(f"unknown calc param: {calc_param}")
         return vals
+
+    def _populate_ra_dec(self):
+        """
+        Populate ra/dec from x/y_cen
+        """
+        # grab the wcs from the coadd
+        first_band = self.config["pipelines"]["bands"][0]
+        wcs = self.coadd_dict[first_band]["wcs"]
+
+        ra, dec = wcs.pixelToSkyArray(
+            self.dwarf_param_frame["x_cen"].values,
+            self.dwarf_param_frame["y_cen"].values,
+            degrees=True,
+        )
+        return ra, dec

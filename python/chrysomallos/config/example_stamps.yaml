@@ -20,7 +20,7 @@ sampling:
     distance: [2,3,'linear']
     ellipticity: [0,0.5, 'linear']
     feh: -2.0
-    m_v: [-11,-5,'linear']
+    m_v: [-9,-5,'linear'] # this should go to -11
     r_scale: null
     ra: null
     n: 1
@@ -30,11 +30,11 @@ sampling:
     x_cen: [300,3800,'linear']
     y_cen: [300,3800,'linear']
     random_seed_injection: null
-  output_file: "example_dwarf_params.fits"
+  output_file: "example_dwarf_params.csv"
   random_seed_sampling: null
   type: sample
 stamp:
-  directory: ./stamps/
+  directory: ./stamps/round_1/ # dont forget the trailing slash
   size: [600,600]
   title_format: hsc_stamp_r1
   Q: 10

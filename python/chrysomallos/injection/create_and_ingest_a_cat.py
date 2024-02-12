@@ -168,40 +168,6 @@ class CreateDwarfInjectionCatalog:
         )
         return catalog
 
-    # def get_data_ids(self, tract=9615, patch=3):
-    #     """
-    #     Get data IDs based on band, skymap, tract, and patch information.
-
-    #     Parameters
-    #     ----------
-    #     tract : int, optional
-    #         Tract number. Default is 9615.
-    #     patch : int, optional
-    #         Patch number. Default is 3.
-    #     """
-    #     self.dataid_dict = {}
-    #     for band in self.config["pipelines"]["bands"]:
-    #         self.dataid_dict[band] = {
-    #             "band": band,
-    #             "skymap": "hsc_rings_v1",
-    #             "tract": tract,
-    #             "patch": patch,
-    #         }
-
-    # def get_coadds(self):
-    #     """
-    #     Fetch coadd data based on the specified bands and data IDs.
-    #     """
-    #     # TODO: think about converting to static method and putting in utils
-    #     self.coadd_dict = {band: {} for band in self.config["pipelines"]["bands"]}
-    #     for band in self.config["pipelines"]["bands"]:
-    #         image = self.butler.get("deepCoadd_calexp", dataId=self.dataid_dict[band])
-    #         self.coadd_dict[band]["image"] = image
-    #         self.coadd_dict[band]["wcs"] = image.getWcs()
-    #         self.coadd_dict[band]["bbox"] = image.getBBox()
-    #         self.coadd_dict[band]["psf"] = image.getPsf()
-    #         self.coadd_dict[band]["photo_calib"] = image.getPhotoCalib()
-
     def ingest_injection_catalogs(self, si_input_collection, catalogs, bands):
         """
         Ingest the prepared injection catalogs into the specified collection.
@@ -242,25 +208,3 @@ class CreateDwarfInjectionCatalog:
         del yaml_dict["dwarf_configs"]
         with open(filename, "w") as file:
             yaml.dump(yaml_dict, file)
-
-
-# if __name__ == "__main__":
-#     """
-#     Main execution script.
-#     Parses input arguments, reads the configuration file,
-#     and runs the dwarf injection catalog creation.
-#     """
-#     config_dict = default_config_dict.copy()
-#     parser = argparse.ArgumentParser(
-#         description="Description of your script/functionality."
-#     )
-#     parser.add_argument("filename", help="name of config.yaml file")
-#     args = parser.parse_args()
-
-#     with open(args.filename, "r") as file:
-#         user_config_dict = yaml.safe_load(file)
-#         for key, value in user_config_dict.items():
-#             config_dict[key] = value
-
-#     creator = CreateDwarfInjectionCatalog(config_dict)
-#     creator.run(ingest=False)

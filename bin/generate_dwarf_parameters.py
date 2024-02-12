@@ -33,3 +33,4 @@ if __name__ == "__main__":
     generated_parameters = sampler.run(write=args.write)
 
     logger.info("Done")
+    print(generated_parameters)
