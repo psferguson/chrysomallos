@@ -47,14 +47,13 @@ if __name__ == "__main__":
         ingest=False,
         multiproc=5,
     )
+
     postage_stamp_generator = PostageStampGenerator(
         config=config,
         dwarf_params_frame=dwarf_params_frame,
         dwarf_catalogs=catalogs,
         coadd_dict=coadd_dict,
     )
-    postage_stamp_generator.run()
-    import pdb
 
-    pdb.set_trace()
+    postage_stamp_generator.run()
     logger.info("Done")

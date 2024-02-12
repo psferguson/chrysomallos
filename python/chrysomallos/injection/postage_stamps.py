@@ -1,8 +1,12 @@
-# import logging
+import time
 
 import fitsio
 import lsst.source.injection as si
+import matplotlib.pyplot as plt
+from astropy.visualization import make_lupton_rgb
 from tqdm import tqdm
+
+from chrysomallos.utils import logger
 
 __all__ = [
     "PostageStampGenerator",
@@ -22,20 +26,26 @@ class PostageStampGenerator:
         inject_config = si.CoaddInjectConfig()
         inject_task = si.CoaddInjectTask(config=inject_config)
 
+        stamp_x_size = self.config["stamp"]["size"][0]
+        stamp_y_size = self.config["stamp"]["size"][1]
+
+        fig, ax = self.create_axes_for_stamps(
+            stamp_x_size=stamp_x_size, stamp_y_size=stamp_y_size, dpi=100
+        )
+
         for i in tqdm(range(self.config["sampling"]["n_dwarfs"])):
             injection_dict = {}
+            start_time = time.time()
             for band in self.config["pipelines"]["bands"]:
                 image = self.coadd_dict[band]["image"]
                 input_exposure = image.clone()
-                psf = image.getPsf()
-                photo_calib = image.getPhotoCalib()
+                psf = self.coadd_dict[band]["psf"]
+                photo_calib = self.coadd_dict[band]["photo_calib"]
                 wcs = self.coadd_dict[band]["wcs"]
                 bbox = self.coadd_dict[band]["bbox"]
 
                 x_cen = self.dwarf_params_frame["x_cen"][i]
                 y_cen = self.dwarf_params_frame["y_cen"][i]
-                stamp_x_size = self.config["injection"]["stamp_size"][0]
-                stamp_y_size = self.config["injection"]["stamp_size"][1]
 
                 minx = bbox.beginX
                 miny = bbox.beginY
@@ -71,25 +81,28 @@ class PostageStampGenerator:
                     stamp_range[0] : stamp_range[1], stamp_range[2] : stamp_range[3]
                 ].array
 
-            fits = fitsio.FITS("test.fits", "rw")
-            array_list = [
-                injection_dict[band] for band in self.config["pipelines"]["bands"]
-            ]
-            names = [band for band in self.config["pipelines"]["bands"]]
-            fits.write(array_list, names=names, clobber=True)
+            title = self.make_stamp_title(
+                stamp_directory=self.config["stamp"]["directory"],
+                stamp_title_format=self.config["stamp"]["title_format"],
+                distance=self.dwarf_params_frame["distance"][i],
+                m_v=self.dwarf_params_frame["m_v"][i],
+                sb=self.dwarf_params_frame["surface_brightness"][i],
+                r_scale=self.dwarf_params_frame["r_scale"][i],
+            )
 
-            # self.dwarf_catalogs[i]["image"] = inject_output.output_exposure
-
-        # injection
-        # for i in tqdm(self.catalogs):
-        #     inject_output = inject_task.run(
-        #         injection_catalogs=[catalogs[i]["catalog"]],
-        #         input_exposure=coadd_dict["g"].clone(),
-        #         psf=coadd_dict["g"].getPsf(),
-        #         photo_calib=coadd_dict["g"].getPhotoCalib(),
-        #         wcs=coadd_dict["g"].getWcs(),
-        #     )
-        #     catalogs[i]["image"] = inject_output.output_exposure
+            self.make_one_stamp_png(
+                injection_dict=injection_dict,
+                title=title,
+                Q=self.config["stamp"]["Q"],
+                stretch=self.config["stamp"]["stretch"],
+                minimum=self.config["stamp"]["minimum"],
+                ax=ax,
+            )
+            end_time = time.time()
+            cat_length = len(self.dwarf_catalogs[band][i])
+            logger.info(
+                f"Time to create stamp with {cat_length} sources: {end_time - start_time:0.2f} seconds"
+            )
 
     def crop_injection_catalog(
         self, catalog, band, x_cen, y_cen, stamp_x_size, stamp_y_size
@@ -104,6 +117,55 @@ class PostageStampGenerator:
         ) | (catalog["source_type"] == "Sersic")
         cropped_catalog = catalog[sel]
         return cropped_catalog
+
+    def make_one_stamp_png(self, injection_dict, title, Q, stretch, minimum, ax=None):
+        if ax is None:
+            fig, ax = self.create_axes_for_stamps()
+        else:
+            ax.clear()
+        rgb = make_lupton_rgb(
+            injection_dict["i"],
+            injection_dict["r"],
+            injection_dict["g"],
+            Q=Q,
+            stretch=stretch,
+            minimum=minimum,
+        )
+        ax.imshow(rgb)
+
+        plt.savefig(title, dpi=100)
+
+    def create_axes_for_stamps(self, stamp_x_size=600, stamp_y_size=600, dpi=100):
+        x_size_inches = int(stamp_x_size / dpi)
+        y_size_inches = int(stamp_y_size / dpi)
+        fig, ax = plt.subplots(figsize=(x_size_inches, y_size_inches), dpi=dpi)
+        ax.axis("off")
+        fig.subplots_adjust(left=0, bottom=0, right=1, top=1, wspace=0, hspace=0)
+        ax.set_xticks([], [])
+        ax.set_yticks([], [])
+        return fig, ax
+
+    def make_stamp_title(
+        self,
+        stamp_directory,
+        distance,
+        m_v,
+        sb,
+        r_scale,
+        stamp_title_format="hsc_stamp_d_{}_mv_{}_sb_{}_r_{}.png",
+    ):
+        filename = stamp_directory
+        filename += stamp_title_format.format(distance, m_v, sb, r_scale)
+        return filename
+
+    def save_stamp_as_fits(self, stamp_directory, title, injection_dict):
+        fits = fitsio.FITS(stamp_directory + title.replace(".png", ".fits"), "rw")
+        array_list = [
+            injection_dict[band] for band in self.config["pipelines"]["bands"]
+        ]
+        names = [band for band in self.config["pipelines"]["bands"]]
+        fits.write(array_list, names=names, clobber=True)
+        fits.close()
 
 
 # class CatalogCreator:

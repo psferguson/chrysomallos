@@ -1,5 +1,3 @@
-import argparse
-
 import astropy.table as atable
 import lsst.source.injection as si
 import numpy as np
@@ -8,126 +6,7 @@ from lsst.daf.butler import Butler, CollectionType
 from lsst.daf.butler.registry import MissingCollectionError
 
 from chrysomallos.injection import adopt_a_cat, massage_the_cat
-from chrysomallos.utils.log import logger
-
-# from dataclasses import dataclass
-# from chrysomallos.utils.utils import (
-#     mstar_from_absmag,
-#     rh_mv_to_sb,
-#     sb_mv_to_rh,
-#     sb_rh_to_mv,
-# )
-
-default_config_dict = {
-    "repo": "/repo/main",
-    "collection": "HSC/runs/RC2/w_2023_32/DM-40356",
-    "bands": ["g", "r", "i"],
-    "tract": 9615,
-    "patch": 3,
-    "dwarfs": [],
-}
-
-
-# @dataclass
-# class DwarfConfig:
-#     """
-#     Configuration class for a dwarf galaxy.
-#     Sets various properties of the dwarf galaxy, including its location,
-#     age, metallicity, and other parameters.
-#     """
-
-#     # DEFAULT PARAMETERS
-#     # ID of the injection cat
-#     id: int
-#     # X-coordinate of the object's center [pixel]
-#     x_cen: float
-#     # Y-coordinate of the object's center [pixel]
-#     y_cen: float
-#     # surface brightness
-#     sb: float = np.nan
-#     # absolute magnitude
-#     m_v: float = np.nan
-#     # Age of the object [Gyr]
-#     age: float = 10.0
-#     # Metallicity of the object [Fe/H]
-#     feh: float = -2.0
-#     # Stellar mass of the object [Msolar]
-#     stellar_mass: float = 5.0e5
-#     # Distance to the object [Mpc]
-#     dist: float = np.nan
-#     # Scale radius of the object [pc]
-#     r_scale: float = np.nan
-#     # Ellipticity of the object (0-1)
-#     ellip: float = 0
-#     # Orientation angle of the object
-#     theta: float = 0
-#     # Sersic index of the object (shape parameter)
-#     n: float = 1
-#     # Magnitude limit to inject for the object
-#     mag_limit: float = 27
-#     # Band in which the magnitude limit is defined
-#     mag_limit_band: str = "LSST_g"
-#     # Seed for random number generation (for reproducibility)
-#     random_seed: int = None
-#     #
-
-#     def __post_init__(self, dwarf_dict=None, **kwargs):
-#         """
-#         Initialize the class with the given dwarf dictionary.
-
-#         Parameters
-#         ----------
-#         dwarf_dict : dict
-#             Dictionary containing the properties and attributes of a dwarf.
-#         """
-#         # check that values are not bad
-#         if (self.ellip < 0) or (self.ellip > 1):
-#             raise RuntimeError(f"ellip must be between 0 and 1 : {self.ellip}")
-#         if (
-#             np.isnan(self.Mv)
-#             and not np.isnan(self.r_scale)
-#             and not np.isnan(self.sb)
-#             and not np.isnan(self.dist)
-#         ):
-#             self.Mv = sb_rh_to_mv(sb=self.sb, rh=self.r_scale, distance=self.dist)
-#         if (
-#             np.isnan(self.r_scale)
-#             and not np.isnan(self.Mv)
-#             and not np.isnan(self.sb)
-#             and not np.isnan(self.dist)
-#         ):
-#             self.Mv = sb_mv_to_rh(sb=self.sb, M_v=self.Mv, distance=self.dist)
-#         if (
-#             np.isnan(self.sb)
-#             and not np.isnan(self.Mv)
-#             and not np.isnan(self.r_scale)
-#             and not np.isnan(self.dist)
-#         ):
-#             self.sb = rh_mv_to_sb(rh=self.r_scale, M_v=self.Mv, distance=self.dist)
-#         if np.isnan(self.mass) and not np.isnan(self.Mv):
-#             self.mass = mstar_from_absmag(self.mV)
-#     @classmethod
-#     def from_config_and_frame(self, config, dwarf_params_frame):
-#         # fetch the constructor's signature
-#         cls_fields = {field for field in signature(cls).parameters}
-
-#         for field in cls_fields:
-
-#         # split the kwargs into native ones and new ones
-#         native_args, new_args = {}, {}
-#         for name, val in kwargs.items():
-#             if name in cls_fields:
-#                 native_args[name] = val
-#             else:
-#                 new_args[name] = val
-
-#         # use the native ones to create the class ...
-#         ret = cls(**native_args)
-
-#         # ... and add the new ones by hand
-#         for new_name, new_val in new_args.items():
-#             setattr(ret, new_name, new_val)
-#         return ret
+from chrysomallos.utils import get_coadd_dict, logger
 
 
 class CreateDwarfInjectionCatalog:
@@ -137,7 +16,7 @@ class CreateDwarfInjectionCatalog:
     and creates catalogs ready for injection, then ingests into butler.
     """
 
-    def __init__(self, config, dwarf_params_frame):
+    def __init__(self, config, dwarf_params_frame, coadd_dict=None):
         """
         Initialize the class with the given configuration dictionary.
 
@@ -152,6 +31,10 @@ class CreateDwarfInjectionCatalog:
             drop=True, inplace=False
         )
 
+        self.coadd_dict = get_coadd_dict(coadd_dict, config)
+        self.dwarf_cats = []
+        self.first_band = config["pipelines"]["bands"][0]
+
         if (len(np.unique(dwarf_params_frame["tract"]))) > 1:
             raise Exception(
                 f"can only run one tract at at time: {np.unique(dwarf_params_frame['tract'])}"
@@ -160,35 +43,11 @@ class CreateDwarfInjectionCatalog:
             raise Exception(
                 f"can only run one patch at at time: {np.unique(dwarf_params_frame['patch'])}"
             )
-        # for key, value in config_dict.items():
-        #     setattr(self, key, value)
-        # self.dwarf_configs = []  # this should be a dataframe
-        # for dwarf in self.dwarfs:
-        #     self.dwarf_configs.append(DwarfConfig(**dwarf))
 
-    def run(self, ingest=False, coadd_dict=None, multiproc=False):
+    def run(self, ingest=False, multiproc=False):
         """
         Main method to run the dwarf injection catalog creation process.
         """
-
-        self.get_data_ids(
-            tract=self.config["pipelines"]["tract"],
-            patch=self.config["pipelines"]["patch"],
-        )
-
-        if coadd_dict:
-            first_band = self.config["pipelines"]["bands"][0]
-            self.coadd_dict = coadd_dict
-            self.wcs = self.coadd_dict[first_band].getWcs()
-            self.bbox = self.coadd_dict[first_band].getBBox()
-        else:
-            self.butler = Butler(
-                self.config["pipelines"]["repo"],
-                collections=self.config["pipelines"]["input_collections"],
-            )
-            # grab deepCoaddd
-            self.get_coadds()
-        self.dwarf_cats = []
         # generate xy catalog for each dwarf
 
         self.generate_catalogs(multiproc=multiproc)
@@ -207,8 +66,8 @@ class CreateDwarfInjectionCatalog:
                             cat_inp=cat,
                             mag_limit=self.config["injection"]["mag_limit"],
                             band_for_injection=band,
-                            wcs=self.wcs,
-                            bbox=self.bbox,
+                            wcs=self.coadd_dict[self.first_band]["wcs"],
+                            bbox=self.coadd_dict[self.first_band]["bbox"],
                             x_cen=self.dwarf_params_frame["x_cen"][i],
                             y_cen=self.dwarf_params_frame["y_cen"][i],
                             r_scale=self.dwarf_params_frame["r_scale"][i],
@@ -309,37 +168,39 @@ class CreateDwarfInjectionCatalog:
         )
         return catalog
 
-    def get_data_ids(self, tract=9615, patch=3):
-        """
-        Get data IDs based on band, skymap, tract, and patch information.
+    # def get_data_ids(self, tract=9615, patch=3):
+    #     """
+    #     Get data IDs based on band, skymap, tract, and patch information.
 
-        Parameters
-        ----------
-        tract : int, optional
-            Tract number. Default is 9615.
-        patch : int, optional
-            Patch number. Default is 3.
-        """
-        self.dataid_dict = {}
-        for band in self.config["pipelines"]["bands"]:
-            self.dataid_dict[band] = {
-                "band": band,
-                "skymap": "hsc_rings_v1",
-                "tract": tract,
-                "patch": patch,
-            }
+    #     Parameters
+    #     ----------
+    #     tract : int, optional
+    #         Tract number. Default is 9615.
+    #     patch : int, optional
+    #         Patch number. Default is 3.
+    #     """
+    #     self.dataid_dict = {}
+    #     for band in self.config["pipelines"]["bands"]:
+    #         self.dataid_dict[band] = {
+    #             "band": band,
+    #             "skymap": "hsc_rings_v1",
+    #             "tract": tract,
+    #             "patch": patch,
+    #         }
 
-    def get_coadds(self):
-        """
-        Fetch coadd data based on the specified bands and data IDs.
-        """
-        # TODO: think about converting to static method and putting in utils
-        self.coadd_dict = {band: {} for band in self.config["pipelines"]["bands"]}
-        for band in self.config["pipelines"]["bands"]:
-            image = self.butler.get("deepCoadd_calexp", dataId=self.dataid_dict[band])
-            self.coadd_dict[band]["image"] = image
-            self.coadd_dict[band]["wcs"] = image.getWcs()
-            self.coadd_dict[band]["bbox"] = image.getBBox()
+    # def get_coadds(self):
+    #     """
+    #     Fetch coadd data based on the specified bands and data IDs.
+    #     """
+    #     # TODO: think about converting to static method and putting in utils
+    #     self.coadd_dict = {band: {} for band in self.config["pipelines"]["bands"]}
+    #     for band in self.config["pipelines"]["bands"]:
+    #         image = self.butler.get("deepCoadd_calexp", dataId=self.dataid_dict[band])
+    #         self.coadd_dict[band]["image"] = image
+    #         self.coadd_dict[band]["wcs"] = image.getWcs()
+    #         self.coadd_dict[band]["bbox"] = image.getBBox()
+    #         self.coadd_dict[band]["psf"] = image.getPsf()
+    #         self.coadd_dict[band]["photo_calib"] = image.getPhotoCalib()
 
     def ingest_injection_catalogs(self, si_input_collection, catalogs, bands):
         """
@@ -383,23 +244,23 @@ class CreateDwarfInjectionCatalog:
             yaml.dump(yaml_dict, file)
 
 
-if __name__ == "__main__":
-    """
-    Main execution script.
-    Parses input arguments, reads the configuration file,
-    and runs the dwarf injection catalog creation.
-    """
-    config_dict = default_config_dict.copy()
-    parser = argparse.ArgumentParser(
-        description="Description of your script/functionality."
-    )
-    parser.add_argument("filename", help="name of config.yaml file")
-    args = parser.parse_args()
+# if __name__ == "__main__":
+#     """
+#     Main execution script.
+#     Parses input arguments, reads the configuration file,
+#     and runs the dwarf injection catalog creation.
+#     """
+#     config_dict = default_config_dict.copy()
+#     parser = argparse.ArgumentParser(
+#         description="Description of your script/functionality."
+#     )
+#     parser.add_argument("filename", help="name of config.yaml file")
+#     args = parser.parse_args()
 
-    with open(args.filename, "r") as file:
-        user_config_dict = yaml.safe_load(file)
-        for key, value in user_config_dict.items():
-            config_dict[key] = value
+#     with open(args.filename, "r") as file:
+#         user_config_dict = yaml.safe_load(file)
+#         for key, value in user_config_dict.items():
+#             config_dict[key] = value
 
-    creator = CreateDwarfInjectionCatalog(config_dict)
-    creator.run(ingest=False)
+#     creator = CreateDwarfInjectionCatalog(config_dict)
+#     creator.run(ingest=False)

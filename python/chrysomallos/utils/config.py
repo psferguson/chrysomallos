@@ -12,7 +12,6 @@ from chrysomallos.utils.log import logger
 
 __all__ = [
     "default_dict",
-    "default_stamp_dict",
     "Config",
 ]
 default_dict = {
@@ -53,49 +52,16 @@ default_dict = {
         "mag_limit": np.nan,
         "mag_limit_band": None,
         "ingest": False,
-        "stamp_size": [600, 600],
         "output_collection": None,
         "type": None,  # either "grid" or "stamp"
     },
-}
-default_stamp_dict = {
-    "pipelines": {
-        # repository path
-        "repo": "/repo/main",
-        # collection string
-        "input_collection": "HSC/runs/RC2/w_2023_32/DM-40356",
-        # bands for injection
-        "bands": ["g", "r", "i"],
-        # skymap
-        "skymap": "hsc_rings_v1",
-        # tract to use
-        "tract": 9615,
-        # patch to use
-        "patch": 3,
-    },
-    "sampling": {
-        "n_dwarfs": 0,
-        "type": "sample",
-        "filename": "something.csv",
-        "params": {
-            "distance": [2, 3, "linear"],
-            "m_v": [-11, -5, "linear"],
-            "surface_brightness": [24, 27, "linear"],
-            "ellipticity": [0, 0.5, "linear"],
-            "x_cen": [300, 3800, "linear"],
-            "y_cen": [300, 3800, "linear"],
-            "age": 10,
-            "feh": -2.0,
-            "stellar_mass": 500000,
-            "sersic_index": 1,
-        },
-    },
-    "injection": {
-        "mag_limit": 29,
-        "mag_limit_band": "LSST_g",
-        "ingest": False,
-        "stamp_size": [600, 600],
-        "output_collection": "help",
+    "stamp": {
+        "directory": "./stamps",
+        "size": None,
+        "title_format": "test_stamp_d_{}_mv_{}_sb_{}_r_{}.png",
+        "Q": 10,
+        "stretch": 0.5,
+        "minimum": 0,
     },
 }
 

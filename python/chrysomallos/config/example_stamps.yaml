@@ -3,8 +3,8 @@ injection:
   ingest: false
   mag_limit: 29
   mag_limit_band: LSST_g
-  stamp_size: [600,600]
   type: stamp
+
 pipelines:
   bands: ['g','r','i']
   input_collections: HSC/runs/RC2/w_2023_32/DM-40356
@@ -33,3 +33,10 @@ sampling:
   output_file: "example_dwarf_params.fits"
   random_seed_sampling: null
   type: sample
+stamp:
+  directory: ./stamps/
+  size: [600,600]
+  title_format: hsc_stamp_d_{:.1f}_mv_{:.1f}_sb_{:.1f}_r_{:0.0f}.png
+  Q: 10
+  stretch: 0.5
+  minimum: 0
