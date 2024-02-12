@@ -1,7 +1,6 @@
 import astropy.table as atable
 import lsst.source.injection as si
 import numpy as np
-import yaml
 from lsst.daf.butler import Butler, CollectionType
 from lsst.daf.butler.registry import MissingCollectionError
 
@@ -11,20 +10,25 @@ from chrysomallos.utils import get_coadd_dict, logger
 
 class CreateDwarfInjectionCatalog:
     """
-    Class to create an injection catalog for dwarf galaxies.
-    Processes configuration data, fetches coadd from butler,
-    and creates catalogs ready for injection, then ingests into butler.
+    Creates a catalog for injecting dwarf galaxies into images.
+    Reads configuration, fetches coadd data, and prepares catalogs
+    for injection. Optionally, catalogs can be ingested into a butler
+    repository.
     """
 
     def __init__(self, config, dwarf_params_frame, coadd_dict=None):
         """
-        Initialize the class with the given configuration dictionary.
+        Initializes the catalog creator with configuration and dwarf
+        parameters.
 
         Parameters
         ----------
-        config_dict : dict, optional
-            Configuration dictionary with parameters and settings.
-            Default is `default_config_dict`.
+        config : dict
+            Configuration parameters for the catalog creation.
+        dwarf_params_frame : DataFrame
+            Parameters for each dwarf galaxy to be injected.
+        coadd_dict : dict, optional
+            Coadd information for the image areas of interest.
         """
         self.config = config
         self.dwarf_params_frame = dwarf_params_frame.reset_index(
@@ -46,7 +50,22 @@ class CreateDwarfInjectionCatalog:
 
     def run(self, ingest=False, multiproc=False):
         """
-        Main method to run the dwarf injection catalog creation process.
+        Executes the catalog creation and ingestion process.
+
+        if self.config['sampling']['type']=='grid':
+            all generated catalogs are concatenated at the end
+            to a dictionary with keys being the bands
+        if self.config['sampling']['type']=='stamp':
+            a dictonary will be returned with keys being the bands
+            and the values will be a list of catalogs one for each dwarf
+
+        Parameters
+        ----------
+        ingest : bool, default=False
+            If True, ingests the generated catalogs into the butler.
+        multiproc : bool, default=False
+            Enables multiprocessing for catalog generation.
+
         """
         # generate xy catalog for each dwarf
 
@@ -115,6 +134,14 @@ class CreateDwarfInjectionCatalog:
         return self.injection_cats, self.coadd_dict
 
     def generate_catalogs(self, multiproc=False):
+        """
+        Generates individual catalogs for each dwarf galaxy.
+
+        Parameters
+        ----------
+        multiproc : bool, default=False
+            If True, uses multiprocessing to speed up the process.
+        """
         self.config["injection"]["mag_limit_band"]
 
         rows = self.dwarf_params_frame.to_dict(orient="records")
@@ -141,6 +168,14 @@ class CreateDwarfInjectionCatalog:
 
     @staticmethod
     def generate_single_catalog(args):
+        """
+        Generates a single catalog for a dwarf galaxy.
+
+        Parameters
+        ----------
+        args : tuple
+            Contains the parameters for the dwarf galaxy.
+        """
         row, wcs, bbox, mag_limit_band = args
 
         if np.isnan(row["random_seed_injection"]) | (
@@ -170,16 +205,16 @@ class CreateDwarfInjectionCatalog:
 
     def ingest_injection_catalogs(self, si_input_collection, catalogs, bands):
         """
-        Ingest the prepared injection catalogs into the specified collection.
+        Ingests generated catalogs into a butler collection.
 
         Parameters
         ----------
         si_input_collection : str
-            The collection to ingest the catalogs into.
+            The collection name for ingestion.
         catalogs : dict
-            Dictionary of prepared catalogs, keyed by band.
+            The catalogs to ingest, keyed by band.
         bands : list
-            List of bands to consider.
+            The bands to ingest catalogs for.
         """
         writeable_butler = Butler(self.repo, writeable=True)
         try:
@@ -202,9 +237,3 @@ class CreateDwarfInjectionCatalog:
                 output_collection=si_input_collection,
                 dataset_type_name="injection_catalog",
             )
-
-    def save_config(self, filename):
-        yaml_dict = vars(self).copy()
-        del yaml_dict["dwarf_configs"]
-        with open(filename, "w") as file:
-            yaml.dump(yaml_dict, file)

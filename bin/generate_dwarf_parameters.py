@@ -5,20 +5,24 @@ from chrysomallos.utils import Config, logger
 
 if __name__ == "__main__":
     """
-    Main execution script.
-    Parses input arguments, reads the configuration file,
-    and runs the dwarf injection catalog creation.
+    Generates a dwarf parameters based on specified configurations.
+    These can then be injected into coadd images.
     """
     parser = argparse.ArgumentParser(
-        description="Description of your script/functionality."
+        description="Generates a dwarf parameters based on specified configurations."
     )
-    parser.add_argument("--config", "-c", help="name of config.yaml file", default=None)
+    parser.add_argument(
+        "--config",
+        "-c",
+        help="Path to the config.yaml file. Defaults to an example configuration if not specified.",
+        default=None,
+    )
     parser.add_argument(
         "--write",
         "-w",
         default=False,
         action="store_true",
-        help="write csv of sampled dwarfs",
+        help="Enables writing the sampled dwarfs to a CSV or FITS file.",
     )
     args = parser.parse_args()
     if args.config is None:
@@ -32,5 +36,5 @@ if __name__ == "__main__":
 
     generated_parameters = sampler.run(write=args.write)
 
-    logger.info("Done")
+    logger.info("Sampling Completed")
     print(generated_parameters)

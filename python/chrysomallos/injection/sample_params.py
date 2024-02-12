@@ -43,15 +43,33 @@ OUT_ORDER = [
 
 class DwarfParamSampler:
     """
-    Class for generating dwarf parameters:
+    Samples parameters for dwarf galaxies based on configuration settings.
+    This includes sampling galaxy properties and calculating dependent parameters.
     """
 
     def __init__(self, config, coadd_dict=None):
+        """
+        Initializes the sampler with a configuration dictionary and optional coaddition data.
+
+        Parameters:
+        - config: Configuration dictionary with sampling and pipeline settings.
+        - coadd_dict: Optional dictionary containing coadded image data.
+        """
         self.config = config
         self.coadd_dict = get_coadd_dict(coadd_dict=coadd_dict, config=self.config)
-        # To Do: do we reading the bbox and adjust x/y_cen ranges?
+        # TODO: do we want to read the bbox and adjust x/y_cen ranges?
 
     def run(self, write=True):
+        """
+        Executes the sampling process and optionally writes output to a file.
+
+        Parameters:
+        - write: Boolean indicating whether to write the sampled parameters to a file.
+
+        Returns:
+        - DataFrame containing sampled parameters for dwarf galaxies.
+        """
+
         sampling_config = self.config["sampling"]
         if sampling_config["random_seed_sampling"] is not None:
             np.random.seed(sampling_config["random_seed_sampling"])
@@ -102,8 +120,18 @@ class DwarfParamSampler:
 
     def sample(self, param, n_dwarfs):
         """
+        Samples a parameter based on its configuration.
+
         If passed a number return array of that value length n_dwarfs
-        If passed list with 3 elements and last element is linear
+        If passed list with 3 elements and last element is linear will
+        uniformly sample between the first two elements.
+
+        Parameters:
+        - param: The parameter configuration to sample from.
+        - n_dwarfs: The number of dwarf galaxies to sample parameters for.
+
+        Returns:
+        - An array of sampled values.
         """
         if isinstance(param, float) | isinstance(param, int):
             data = np.ones(n_dwarfs) * param
@@ -118,11 +146,26 @@ class DwarfParamSampler:
         return data
 
     def linear(self, min_val, max_val, size):
+        """
+        Generates linearly spaced samples between a minimum and maximum value.
+
+        Parameters:
+        - min_val: The minimum value in the range.
+        - max_val: The maximum value in the range.
+        - size: The number of samples to generate.
+
+        Returns:
+        - An array of linearly spaced samples.
+        """
         if max_val <= min_val:
             raise Exception(f"Max ({max_val}) must be greater than Min ({min_val})")
         return np.random.uniform(min_val, max_val, size)
 
     def write_param_file(self):
+        """
+        Writes the sampled parameters to a file specified in the configuration.
+        Supports CSV and FITS file formats.
+        """
         filename = self.config["sampling"]["output_file"]
         ext = os.path.splitext(filename)[1]
         if ext == ".csv":
@@ -135,6 +178,16 @@ class DwarfParamSampler:
         return 2
 
     def _fill_mv_sb_r_scale(self, calc_param, df):
+        """
+        Fills in missing m_v, surface_brightness, or r_scale based on other parameters.
+
+        Parameters:
+        - calc_param: The parameter to calculate.
+        - df: DataFrame with the dwarf galaxies' parameters.
+
+        Returns:
+        - An array of calculated parameter values.
+        """
         if calc_param == "m_v":
             vals = sb_rh_to_mv(
                 sb=df["surface_brightness"],
@@ -155,7 +208,10 @@ class DwarfParamSampler:
 
     def _populate_ra_dec(self):
         """
-        Populate ra/dec from x/y_cen
+        Populates the RA and Dec fields of the dwarf galaxies based on their x/y_cen.
+
+        Returns:
+        - Arrays of RA and Dec values.
         """
         # grab the wcs from the coadd
         first_band = self.config["pipelines"]["bands"][0]

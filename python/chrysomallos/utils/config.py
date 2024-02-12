@@ -62,6 +62,7 @@ default_dict = {
         "Q": 10,
         "stretch": 0.5,
         "minimum": 0,
+        "n_empty": 0,
     },
 }
 

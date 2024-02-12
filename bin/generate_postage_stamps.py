@@ -12,7 +12,7 @@ if __name__ == "__main__":
     """
     Main execution script.
     Parses input arguments, reads the configuration file,
-    and runs the dwarf injection catalog creation.
+    and runs the dwarf injection catalog creation to generate postage stamps.
     """
     parser = argparse.ArgumentParser(
         description="Description of your script/functionality."
@@ -55,7 +55,7 @@ if __name__ == "__main__":
         coadd_dict=coadd_dict,
     )
 
-    postage_stamp_generator.generate_empty_stamps(10)
+    postage_stamp_generator.generate_empty_stamps(config["stamp"]["n_empty"])
     postage_stamp_generator.run()
     #
     logger.info("Done")

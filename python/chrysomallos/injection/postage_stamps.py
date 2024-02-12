@@ -16,13 +16,30 @@ __all__ = [
 
 
 class PostageStampGenerator:
+    """
+    injectes dwarf galaxies into images and generates postage stamps of.
+    """
+
     def __init__(self, config, dwarf_params_frame, dwarf_catalogs, coadd_dict) -> None:
+        """
+        Initializes the generator with configurations and necessary data structures.
+
+        Parameters:
+        - config: Configuration dictionary for stamp generation parameters.
+        - dwarf_params_frame: DataFrame containing parameters of dwarf galaxies.
+        - dwarf_catalogs: Dictionary of catalogs of dwarf galaxies.
+        - coadd_dict: Dictionary containing coadded image data.
+        """
         self.config = config
         self.dwarf_catalogs = dwarf_catalogs
         self.coadd_dict = coadd_dict
         self.dwarf_params_frame = dwarf_params_frame
 
     def run(self):
+        """
+        Executes the process of generating and saving postage stamps
+        for each dwarf galaxy in the input frame.
+        """
         # check that directory exists
         os.makedirs(self.config["stamp"]["directory"], exist_ok=True)
 
@@ -119,6 +136,18 @@ class PostageStampGenerator:
     def crop_injection_catalog(
         self, catalog, band, x_cen, y_cen, stamp_x_size, stamp_y_size
     ):
+        """
+        Crops the injection catalog to the size of the postage stamp.
+
+        Parameters:
+        - catalog: The catalog of sources to be injected.
+        - band: The band of observation.
+        - x_cen, y_cen: Central coordinates of the postage stamp.
+        - stamp_x_size, stamp_y_size: Dimensions of the postage stamp.
+
+        Returns:
+        - Cropped catalog of sources.
+        """
         wcs = self.coadd_dict[band]["wcs"]
         bbox = self.coadd_dict[band]["bbox"]
 
@@ -131,6 +160,15 @@ class PostageStampGenerator:
         return cropped_catalog
 
     def make_one_stamp_png(self, injection_dict, title, Q, stretch, minimum, ax=None):
+        """
+        Generates a single postage stamp image and saves it as a PNG file.
+
+        Parameters:
+        - injection_dict: Dictionary of image arrays by band.
+        - title: Filename for the saved PNG image.
+        - Q, stretch, minimum: Parameters for Lupton RGB image creation.
+        - ax: Matplotlib Axes object for plotting (optional).
+        """
         if ax is None:
             fig, ax = self.create_axes_for_stamps()
         else:
@@ -148,6 +186,16 @@ class PostageStampGenerator:
         plt.savefig(title, dpi=100)
 
     def create_axes_for_stamps(self, stamp_x_size=600, stamp_y_size=600, dpi=100):
+        """
+        Creates Matplotlib axes suitable for postage stamp images.
+
+        Parameters:
+        - stamp_x_size, stamp_y_size: Dimensions of the postage stamp.
+        - dpi: Dots per inch for the output image.
+
+        Returns:
+        - fig, ax: Matplotlib figure and axes objects.
+        """
         x_size_inches = int(stamp_x_size / dpi)
         y_size_inches = int(stamp_y_size / dpi)
         fig, ax = plt.subplots(figsize=(x_size_inches, y_size_inches), dpi=dpi)
@@ -167,11 +215,32 @@ class PostageStampGenerator:
         ra,
         dec,
     ):
+        """
+        Generates a title for a postage stamp image file.
+
+        Parameters:
+        - stamp_directory: Directory where the stamp will be saved.
+        - stamp_title_prefix: Prefix for the stamp's filename.
+        - tract, patch: Tract and patch identifiers.
+        - dwarf_id: Identifier for the dwarf galaxy.
+        - ra, dec: Right ascension and declination of the galaxy.
+
+        Returns:
+        - Filename for the stamp image.
+        """
         filename = stamp_directory + stamp_title_prefix
         filename += f"{tract}_{patch}_{dwarf_id}_{ra:0.2f}_{dec:0.2f}.png"
         return filename
 
     def save_stamp_as_fits(self, stamp_directory, title, injection_dict):
+        """
+        Saves the generated postage stamp as a FITS file.
+
+        Parameters:
+        - stamp_directory: Directory to save the FITS file.
+        - title: Title of the stamp, used for the FITS filename.
+        - injection_dict: Dictionary of image data by band.
+        """
         fits = fitsio.FITS(stamp_directory + title.replace(".png", ".fits"), "rw")
         array_list = [
             injection_dict[band] for band in self.config["pipelines"]["bands"]
@@ -181,6 +250,12 @@ class PostageStampGenerator:
         fits.close()
 
     def generate_empty_stamps(self, n_stamps):
+        """
+        Generates a specified number of empty postage stamps.
+
+        Parameters:
+        - n_stamps: Number of empty stamps to generate.
+        """
         stamp_x_size = self.config["stamp"]["size"][0]
         stamp_y_size = self.config["stamp"]["size"][1]
         tract = self.config["pipelines"]["tract"]
