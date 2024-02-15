@@ -34,7 +34,7 @@ if __name__ == "__main__":
 
     sampler = DwarfParamSampler(config)
 
-    generated_parameters = sampler.run(write=args.write)
+    generated_parameters, coadd_dict = sampler.run(write=args.write)
 
     logger.info("Sampling Completed")
     print(generated_parameters)

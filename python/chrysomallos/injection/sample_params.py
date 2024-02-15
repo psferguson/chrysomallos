@@ -91,7 +91,11 @@ class DwarfParamSampler:
                 elif (param in ["ra", "dec", "stellar_mass"]) & (param_val is not None):
                     logger.info(f"sampling for param: {param} not yet implemented")
                     output_dict[param] = np.ones(n_dwarfs) * np.nan
-
+                # for any other parameter raise exception if is None or nan
+                elif (param_val is None) or (np.isnan(param_val)):
+                    raise Exception(
+                        f"param {param} is None or nan and cannot be sampled"
+                    )
                 else:
                     output_dict[param] = self.sample(param_val, n_dwarfs)
 
@@ -116,7 +120,7 @@ class DwarfParamSampler:
         if write:
             logger.info("saving generated params")
             self.write_param_file()
-        return self.dwarf_param_frame
+        return self.dwarf_param_frame, self.coadd_dict
 
     def sample(self, param, n_dwarfs):
         """

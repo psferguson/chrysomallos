@@ -37,25 +37,26 @@ if __name__ == "__main__":
         logger.info("reading dwarf parameters from file")
         dwarf_params_frame = read_data_file(config["sampling"]["output_file"])
         logger.info(f"parameters for {len(dwarf_params_frame)} dwarfs")
+        coadd_dict = None
     else:
         sampler = DwarfParamSampler(config)
         logger.info(f"generating params for {config['sampling']['n_dwarfs']} dwarfs")
-        dwarf_params_frame = sampler.run()
+        dwarf_params_frame, coadd_dict = sampler.run()
 
-    creator = CreateDwarfInjectionCatalog(config, dwarf_params_frame)
+    creator = CreateDwarfInjectionCatalog(config, dwarf_params_frame, coadd_dict)
     catalogs, coadd_dict = creator.run(
         ingest=False,
         multiproc=5,
     )
 
-    postage_stamp_generator = PostageStampGenerator(
+    stampler = PostageStampGenerator(
         config=config,
         dwarf_params_frame=dwarf_params_frame,
         dwarf_catalogs=catalogs,
         coadd_dict=coadd_dict,
     )
 
-    postage_stamp_generator.generate_empty_stamps(config["stamp"]["n_empty"])
-    postage_stamp_generator.run()
+    stampler.generate_empty_stamps(config["stamp"]["n_empty"])
+    stampler.run()
     #
     logger.info("Done")

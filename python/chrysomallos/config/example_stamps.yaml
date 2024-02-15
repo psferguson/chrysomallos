@@ -24,7 +24,7 @@ sampling:
     r_scale: null
     ra: null
     n: 1
-    theta: 0
+    theta: [0,180,'linear']
     stellar_mass: null
     surface_brightness: [24,27,'linear']
     x_cen: [300,3800,'linear']

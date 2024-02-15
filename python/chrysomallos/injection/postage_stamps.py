@@ -35,6 +35,13 @@ class PostageStampGenerator:
         self.coadd_dict = coadd_dict
         self.dwarf_params_frame = dwarf_params_frame
 
+        # make sure bands is a list with 3 elements
+        bands = self.config["pipelines"]["bands"]
+        if len(self.config["pipelines"]["bands"]) != 3:
+            raise ValueError(
+                f"3 bands must be specified for postage stamp generation : {bands}"
+            )
+
     def run(self):
         """
         Executes the process of generating and saving postage stamps
@@ -70,6 +77,7 @@ class PostageStampGenerator:
                 dwarf_id=i,
                 ra=self.dwarf_params_frame["ra"][i],
                 dec=self.dwarf_params_frame["dec"][i],
+                bands=self.config["pipelines"]["bands"],
             )
 
             logger.info(f"creating {title} with {cat_length} sources.")
@@ -126,6 +134,7 @@ class PostageStampGenerator:
                 Q=self.config["stamp"]["Q"],
                 stretch=self.config["stamp"]["stretch"],
                 minimum=self.config["stamp"]["minimum"],
+                bands=self.config["pipelines"]["bands"],
                 ax=ax,
             )
             end_time = time.time()
@@ -159,7 +168,9 @@ class PostageStampGenerator:
         cropped_catalog = catalog[sel]
         return cropped_catalog
 
-    def make_one_stamp_png(self, injection_dict, title, Q, stretch, minimum, ax=None):
+    def make_one_stamp_png(
+        self, injection_dict, title, Q, stretch, minimum, bands, ax=None
+    ):
         """
         Generates a single postage stamp image and saves it as a PNG file.
 
@@ -174,9 +185,9 @@ class PostageStampGenerator:
         else:
             ax.clear()
         rgb = make_lupton_rgb(
-            injection_dict["i"],
-            injection_dict["r"],
-            injection_dict["g"],
+            injection_dict[bands[2]],
+            injection_dict[bands[1]],
+            injection_dict[bands[0]],
             Q=Q,
             stretch=stretch,
             minimum=minimum,
@@ -214,6 +225,7 @@ class PostageStampGenerator:
         dwarf_id,
         ra,
         dec,
+        bands,
     ):
         """
         Generates a title for a postage stamp image file.
@@ -228,8 +240,9 @@ class PostageStampGenerator:
         Returns:
         - Filename for the stamp image.
         """
-        filename = stamp_directory + stamp_title_prefix
-        filename += f"{tract}_{patch}_{dwarf_id}_{ra:0.2f}_{dec:0.2f}.png"
+        band_str = "".join(bands)
+        filename = stamp_directory + stamp_title_prefix + "_"
+        filename += f"{tract}_{patch}_{dwarf_id}_{ra:0.2f}_{dec:0.2f}_{band_str}.png"
         return filename
 
     def save_stamp_as_fits(self, stamp_directory, title, injection_dict):
