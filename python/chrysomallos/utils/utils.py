@@ -1,5 +1,9 @@
-import numpy as np
+import os
+
 import astropy.units as u
+import fitsio
+import numpy as np
+import pandas as pd
 
 __all__ = [
     "totmag",
@@ -8,11 +12,13 @@ __all__ = [
     "mag_at_flux_percentile",
     "rad_physical_to_sky",
     "get_flux_in_annulus",
+    "rh_mv_to_sb",
     "sb_rh_to_mv",
     "sb_mv_to_rh",
     "mstar_from_absmag",
     "sdss_g_to_V",
     "dist_to_dmod",
+    "read_data_file",
 ]
 
 
@@ -33,13 +39,13 @@ def totmag(mags):
     # Take the first star in the list as a reference, and
     #   calculate fluxes relative to that reference star.
     mag_ref = mags[0]
-    flux_vs_ref = 10.0**(-0.4*(mags-mag_ref))
+    flux_vs_ref = 10.0 ** (-0.4 * (mags - mag_ref))
 
     # Sum the fluxes of all the stars:
     flux_tot = np.sum(flux_vs_ref)
 
     # Convert the summed flux to magnitude
-    mag_tot = mag_ref - 2.5*np.log10(flux_tot)
+    mag_tot = mag_ref - 2.5 * np.log10(flux_tot)
 
     return mag_tot
 
@@ -61,7 +67,7 @@ def totmag_below_maglim(mags, maglim):
         Total magnitude of all stars with mag >= maglim from input list.
     """
 
-    select_mags = (mags >= maglim)
+    select_mags = mags >= maglim
     if select_mags.sum() > 1:
         mag_below_threshold = totmag(mags[select_mags])
     else:
@@ -89,10 +95,10 @@ def fluxfrac_above_maglim(mags, maglim):
 
     sorted_mags = np.sort(mags)
     mag_ref = sorted_mags[0]
-    flux_vs_ref = 10.0**(-0.4*(sorted_mags-mag_ref))
+    flux_vs_ref = 10.0 ** (-0.4 * (sorted_mags - mag_ref))
     flux_tot = np.sum(flux_vs_ref)
-    select_mags = (sorted_mags >= maglim)
-    frac_above_maglim = 1.0 - np.sum(flux_vs_ref[select_mags])/flux_tot
+    select_mags = sorted_mags >= maglim
+    frac_above_maglim = 1.0 - np.sum(flux_vs_ref[select_mags]) / flux_tot
 
     return frac_above_maglim
 
@@ -118,10 +124,10 @@ def mag_at_flux_percentile(mags, pct):
 
     sorted_mags = np.sort(mags)
     mag_ref = sorted_mags[0]
-    flux_vs_ref = 10.0**(-0.4*(sorted_mags-mag_ref))
+    flux_vs_ref = 10.0 ** (-0.4 * (sorted_mags - mag_ref))
     flux_tot = np.sum(flux_vs_ref)
-    cumflux_frac = np.cumsum(flux_vs_ref)/flux_tot
-    mag_at_pct = sorted_mags[np.argmin(np.abs(cumflux_frac-pct))]
+    cumflux_frac = np.cumsum(flux_vs_ref) / flux_tot
+    mag_at_pct = sorted_mags[np.argmin(np.abs(cumflux_frac - pct))]
 
     return mag_at_pct
 
@@ -141,9 +147,9 @@ def rad_physical_to_sky(radius, distance):
     rad_arcsec : `float`
         Radius converted to arseconds.
     """
-    radius = radius*u.pc
-    distance = distance*u.Mpc
-    angle = radius/(distance.to(u.pc))*u.rad
+    radius = radius * u.pc
+    distance = distance * u.Mpc
+    angle = radius / (distance.to(u.pc)) * u.rad
     return angle.to(u.arcsec).value
 
 
@@ -174,7 +180,7 @@ def get_flux_in_annulus(image, xpos, ypos, r_inner, r_outer):
     xv = np.arange(0, image.getWidth(), 1)
     yv = np.arange(0, image.getHeight(), 1)
     xx, yy = np.meshgrid(xv, yv)
-    rad = np.sqrt((xx-xpos)**2 + (yy-ypos)**2)
+    rad = np.sqrt((xx - xpos) ** 2 + (yy - ypos) ** 2)
     picksel = (rad > r_inner_pix) & (rad < r_outer_pix)
     totflux = np.sum(image.image.array[picksel])
     return totflux
@@ -204,7 +210,7 @@ def absmag_from_mstar(mstars, m_to_l=1.6):
     mv_sun = 4.83
 
     lv = mstars / m_to_l
-    m_v = mv_sun - 2.5*np.log10(lv)
+    m_v = mv_sun - 2.5 * np.log10(lv)
 
     return m_v
 
@@ -232,10 +238,40 @@ def mstar_from_absmag(m_v, m_to_l=1.6):
 
     mv_sun = 4.83
 
-    lv = 10.0**((mv_sun-m_v)/2.5)
+    lv = 10.0 ** ((mv_sun - m_v) / 2.5)
     mstars = m_to_l * lv
 
     return mstars
+
+
+def rh_mv_to_sb(rh, M_v, distance):
+    """
+    From an input surface brightness and half-light radius, calculate
+    the absolute magnitude. Assumes a circular dwarf (i.e., radius, not a).
+
+    Parameters
+    ----------
+    rh : `float`, pc
+        Half-light radius (in pc) of the satellite
+    M_v : `float`
+        Absolute luminosity (V-band absolute magnitude) of the satellite
+    distance : `float`, pc
+        Distance to the satellite (in pc)
+
+    Returns
+    -------
+    sb : `float`, mag/arcsec**2
+        Surface brightness within r_half (in mag/arcsec**2) of the satellite
+
+    """
+
+    r_over_d_radians = rh / distance
+    r_over_d_arcsec = np.rad2deg(r_over_d_radians) * 3600.0
+    area_arcsec = np.pi * (r_over_d_arcsec**2)
+    mv = M_v + 5.0 * np.log10(distance) - 5.0
+    sb = mv + 2.5 * np.log10(area_arcsec)
+
+    return sb
 
 
 def sb_rh_to_mv(sb, rh, distance):
@@ -259,8 +295,8 @@ def sb_rh_to_mv(sb, rh, distance):
 
     """
 
-    r_over_d_radians = rh/distance
-    r_over_d_arcsec = np.rad2deg(r_over_d_radians)*3600.0
+    r_over_d_radians = rh / distance
+    r_over_d_arcsec = np.rad2deg(r_over_d_radians) * 3600.0
     area_arcsec = np.pi * (r_over_d_arcsec**2)
     m_v = sb - 2.5*np.log10(area_arcsec)
     M_V = m_v - 5.0*np.log10(distance) + 5.0
@@ -333,3 +369,55 @@ def sdss_g_to_V(gmags, rmags):
     # V-g   =     (-0.565 ± 0.001)*(g-r) - (0.016 ± 0.001)
     vmags = gmags - 0.565*(gmags-rmags) - 0.016
     return vmags
+
+
+def dist_to_dmod(dist):
+    """
+    Convert distance to distance modulus.
+
+    Parameters
+    ----------
+    dist : `float`, pc
+        Distance to convert (in pc)
+
+    Returns
+    -------
+    dmod : `float`, mag
+        Distance modulus (m-M) corresponding to the input distance
+    """
+    dmod = 5.0*np.log10(dist)-5.0
+    return dmod
+
+
+def sdss_g_to_V(gmags, rmags):
+    """
+    Transform SDSS g, r mags to Johnson V.
+
+    Parameters
+    ----------
+    gmags, rmags : `float`, mag
+        Magnitudes in g, r bands (assumed to be SDSS)
+
+    Returns
+    -------
+    vmags : `float`, mag
+        V-band magnitudes in the Johnson-Cousins system
+
+    """
+    # https://www.sdss3.org/dr8/algorithms/sdssUBVRITransform.php
+    # Using the Jordi+ transform:
+    # V-g   =     (-0.565 ± 0.001)*(g-r) - (0.016 ± 0.001)
+    vmags = gmags - 0.565*(gmags-rmags) - 0.016
+    return vmags
+
+def read_data_file(filename):
+    ext = os.path.splitext(filename)[1]
+    if ext == ".csv":
+        data = pd.read_csv(filename)
+    elif ext == ".fits":
+        data = fitsio.read(filename)
+        data = pd.DataFrame(data.byteswap().newbyteorder())
+    else:
+        raise Exception(f"unrecognized filetype {ext}")
+
+    return data

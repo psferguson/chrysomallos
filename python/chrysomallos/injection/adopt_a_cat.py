@@ -217,8 +217,8 @@ def massage_the_cat(
     band = band_for_injection + "_mag"
 
     mag_for_sersic = totmag_below_maglim(cat_inp[band], mag_limit)
-    logger.info(
-        f"massage a cat mag limit {mag_limit}, sersic component {mag_for_sersic} mag"
+    logger.debug(
+        f"massage a cat mag limit {mag_limit}, sersic component {mag_for_sersic: 0.2f} mag"
     )
     # Replicate the magnitude column for the band you want to inject into:
     cat_inp["mag"] = cat_inp[band]
