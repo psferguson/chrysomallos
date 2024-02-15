@@ -40,6 +40,12 @@ OUT_ORDER = [
     "random_seed_injection",
 ]
 
+PARAMS_NOT_SAMPLED = [
+    "ra",
+    "dec",
+    "stellar_mass",
+    "random_seed_injection",
+]
 
 class DwarfParamSampler:
     """
@@ -57,6 +63,7 @@ class DwarfParamSampler:
         """
         self.config = config
         self.coadd_dict = get_coadd_dict(coadd_dict=coadd_dict, config=self.config)
+        os.makedirs(self.config["sampling"]["output_directory"], exist_ok=True)
         # TODO: do we want to read the bbox and adjust x/y_cen ranges?
 
     def run(self, write=True):
@@ -88,11 +95,11 @@ class DwarfParamSampler:
                 ):
                     output_dict[param] = np.ones(n_dwarfs) * np.nan
                     calc_param = param
-                elif (param in ["ra", "dec", "stellar_mass"]) & (param_val is not None):
+                elif (param in PARAMS_NOT_SAMPLED) & (param_val is not None):
                     logger.info(f"sampling for param: {param} not yet implemented")
                     output_dict[param] = np.ones(n_dwarfs) * np.nan
                 # for any other parameter raise exception if is None or nan
-                elif (param_val is None):
+                elif (param_val is None) & (param not in PARAMS_NOT_SAMPLED):
                     raise Exception(
                         f"param {param} is None or nan and cannot be sampled"
                     )
@@ -170,7 +177,8 @@ class DwarfParamSampler:
         Writes the sampled parameters to a file specified in the configuration.
         Supports CSV and FITS file formats.
         """
-        filename = self.config["sampling"]["output_file"]
+        directory = self.config["sampling"]["output_directory"]
+        filename = directory + self.config["sampling"]["output_file"]
         ext = os.path.splitext(filename)[1]
         if ext == ".csv":
             self.dwarf_param_frame.to_csv(filename, index=False)
