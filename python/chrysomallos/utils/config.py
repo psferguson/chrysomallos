@@ -40,7 +40,7 @@ default_dict = {
             "feh": None,
             "stellar_mass": None,
             "r_scale": None,
-            "n": None,
+            "n_sersic": None,
             "ra": None,
             "dec": None,
             "random_seed_injection": None,

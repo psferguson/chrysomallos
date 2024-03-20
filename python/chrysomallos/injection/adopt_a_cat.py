@@ -276,7 +276,7 @@ def massage_the_cat(
 
     cat.add_columns(
         [semimajor_all, sersic_n_all, pa_all, axis_ratio_all],
-        names=["half_light_radius", "n", "pa", "axis_ratio"],
+        names=["half_light_radius", "n_sersic", "pa", "axis_ratio"],
     )
 
     return cat

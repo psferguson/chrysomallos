@@ -195,7 +195,7 @@ class CreateDwarfInjectionCatalog:
             r_scale=row["r_scale"],
             ellip=row["ellip"],
             theta=row["theta"],
-            n=row["n"],
+            n=row["n_sersic"],
             m_v=row["m_v"],
             mag_limit=36,  # notice this is set to be deeper
             mag_limit_band=mag_limit_band,

@@ -34,7 +34,7 @@ OUT_ORDER = [
     "feh",
     "stellar_mass",
     "r_scale",
-    "n",
+    "n_sersic",
     "random_seed_injection",
 ]
 

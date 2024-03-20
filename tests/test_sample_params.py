@@ -47,7 +47,7 @@ class TestDwarfParamSampler(unittest.TestCase):
                     "m_v": [-9, -5, "linear"],
                     "r_scale": None,
                     "ra": None,
-                    "n": 1,
+                    "n_sersic": 1,
                     "theta": [0, 180, "linear"],
                     "stellar_mass": None,
                     "surface_brightness": [24, 27, "linear"],
