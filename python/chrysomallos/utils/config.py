@@ -32,7 +32,7 @@ default_dict = {
             "dist": None,
             "m_v": None,
             "surface_brightness": None,
-            "ellipticity": None,
+            "ellip": None,
             "theta": None,
             "x_cen": None,
             "y_cen": None,

@@ -28,7 +28,7 @@ OUT_ORDER = [
     "dist",
     "m_v",
     "surface_brightness",
-    "ellipticity",
+    "ellip",
     "theta",
     "age",
     "feh",

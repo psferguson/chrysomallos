@@ -193,7 +193,7 @@ class CreateDwarfInjectionCatalog:
             stellar_mass=row["stellar_mass"],
             dist=row["dist"],
             r_scale=row["r_scale"],
-            ellip=row["ellipticity"],
+            ellip=row["ellip"],
             theta=row["theta"],
             n=row["n"],
             m_v=row["m_v"],

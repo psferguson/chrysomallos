@@ -42,7 +42,7 @@ class TestDwarfParamSampler(unittest.TestCase):
                     "age": 10,
                     "dec": None,
                     "dist": [2, 3, "linear"],
-                    "ellipticity": [0, 0.5, "linear"],
+                    "ellip": [0, 0.5, "linear"],
                     "feh": -2.0,
                     "m_v": [-9, -5, "linear"],
                     "r_scale": None,
