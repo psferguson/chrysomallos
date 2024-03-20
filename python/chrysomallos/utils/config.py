@@ -46,6 +46,7 @@ default_dict = {
             "random_seed_injection": None,
         },
         "output_file": None,
+        "output_directory": "./"
     },
     "injection": {
         "dwarfs": None,
