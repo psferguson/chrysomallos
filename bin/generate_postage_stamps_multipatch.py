@@ -1,5 +1,6 @@
 import argparse
 import os
+
 import numpy as np
 
 from chrysomallos.injection import (
@@ -7,21 +8,20 @@ from chrysomallos.injection import (
     DwarfParamSampler,
     PostageStampGenerator,
 )
-from chrysomallos.utils import Config, logger, read_data_file
+from chrysomallos.utils import Config, logger
 
 
 def run_single_config(args):
-    tract,patch, sampling_seed = args
-
+    tract, patch, sampling_seed = args
 
     config_dict = "./config/stamps_home_net.yaml"
     config = Config(config_dict)
-    
+
     config["pipelines"]["tract"] = tract
     config["pipelines"]["patch"] = patch
     config["sampling"]["output_file"] = f"round_3_tract_{tract}_patch_{patch}.csv"
     config["sampling"]["random_seed_sampling"] = sampling_seed
-    
+
     sampler = DwarfParamSampler(config)
     logger.info(f"generating params for {config['sampling']['n_dwarfs']} dwarfs")
     dwarf_params_frame, coadd_dict = sampler.run(write=True)
@@ -41,12 +41,11 @@ def run_single_config(args):
 
     postage_stamp_generator.run()
     postage_stamp_generator.generate_empty_stamps(config["stamp"]["n_empty"])
-    
+
 
 def run_configs(stamp_list, multiproc=False):
+    gen_args = stamp_list  # [(tract, patch, ) for tract in tracts for patch in patches]
 
-    gen_args = stamp_list#[(tract, patch, ) for tract in tracts for patch in patches]
-    
     if multiproc:
         from multiprocessing import Pool
 
@@ -76,18 +75,22 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
     force_sampling = args.force_sampling
-    patches = [1,  28, 31, 34, 36, 42, 63, 64, 65, 67,73,79]
+    patches = [1, 28, 31, 34, 36, 42, 63, 64, 65, 67, 73, 79]
     tracts = [9615, 9697, 9813]
     from glob import glob
 
-    flist = glob("deepCoadd_repo/HSC/runs/RC2/w_2023_32/DM-40356/20230819T003257Z/deepCoadd_calexp/*/*/*/*")
+    flist = glob(
+        "deepCoadd_repo/HSC/runs/RC2/w_2023_32/DM-40356/20230819T003257Z/deepCoadd_calexp/*/*/*/*"
+    )
     directory = "deepCoadd_repo/HSC/runs/RC2/w_2023_32/DM-40356/20230819T003257Z/deepCoadd_calexp/"
     stamp_list = []
     for tract in tracts:
         for patch in np.arange(81):
             band_count = 0
-            for band in ['g', 'r', 'i']:
-                if os.path.exists(directory + "/" + str(tract) + "/" + str(patch) + "/" + band):
+            for band in ["g", "r", "i"]:
+                if os.path.exists(
+                    directory + "/" + str(tract) + "/" + str(patch) + "/" + band
+                ):
                     band_count += 1
             if band_count == 3:
                 stamp_list.append((tract, patch, np.random.randint(0, 1000000)))

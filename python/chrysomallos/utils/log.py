@@ -1,14 +1,13 @@
 # Standard library
-import sys
 import logging
+import sys
 
 # Third-party
 from astropy.logger import AstropyLogger
 
 
 class ChrysomallosLogger(AstropyLogger):
-
-    def _set_defaults(self, level='INFO'):
+    def _set_defaults(self, level="INFO"):
         """
         Reset logger to its initial state
         """
@@ -32,9 +31,9 @@ class StreamHandler(logging.StreamHandler):
     """
 
     def emit(self, record):
-        '''
+        """
         The formatter for stderr
-        '''
+        """
         # Import utils.console only if necessary and at the latest because
         # the import takes a significant time [#4649]
         from astropy.utils.console import color_print
@@ -45,17 +44,17 @@ class StreamHandler(logging.StreamHandler):
             stream = sys.stderr
 
         if record.levelno < logging.INFO:
-            color_print(record.levelname, 'magenta', end='', file=stream)
+            color_print(record.levelname, "magenta", end="", file=stream)
         elif record.levelno < logging.WARN:
-            color_print(record.levelname, 'green', end='', file=stream)
+            color_print(record.levelname, "green", end="", file=stream)
         elif record.levelno < logging.ERROR:
-            color_print(record.levelname, 'brown', end='', file=stream)
+            color_print(record.levelname, "brown", end="", file=stream)
         else:
-            color_print(record.levelname, 'red', end='', file=stream)
+            color_print(record.levelname, "red", end="", file=stream)
         record.message = "{0}".format(record.msg)
         print(": " + record.message, file=stream)
 
 
 logging.setLoggerClass(ChrysomallosLogger)
-logger = logging.getLogger('chrysomallosLogger')
+logger = logging.getLogger("chrysomallosLogger")
 logger._set_defaults()
