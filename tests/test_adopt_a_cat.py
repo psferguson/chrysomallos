@@ -36,12 +36,24 @@ class TestAdoptACat(unittest.TestCase):
 class TestMassageTheCat(unittest.TestCase):
     def setUp(self):
         self.cat_inp = Table(
-            {"ra": [10.0, 20.0], "dec": [30.0, 40.0], "LSST_g_mag": [15.0, 16.0]}
+            {"ra": [10.0, 20.0], 
+             "dec": [30.0, 40.0], 
+             "LSST_g_mag": [15.0, 16.0],
+             "source_type": ["DeltaFunction", "DeltaFunction"],
+             "dist": [2.0, 2.0],
+            }
         )
         self.mag_limit = 20.0
         self.band_for_injection = "LSST_g"
-        self.wcs = None  # replace with unittest mock
-        self.bbox = None  # replace with unittest mock
+        self.bbox = geom.Box2I(
+            corner=geom.Point2I(11900, 0),
+            dimensions=geom.Extent2I(4200, 4100),
+        )  
+        self.wcs = afwGeom.makeSkyWcs(
+            crpix=geom.Point2D(17999, 17999),
+            crval=geom.SpherePoint(110.0, 39.3, geom.degrees),
+            cdMatrix=afwGeom.makeCdMatrix(scale=0.175 * geom.arcseconds),
+        )  
         self.x_cen = 15.0
         self.y_cen = 35.0
 
