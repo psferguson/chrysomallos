@@ -29,7 +29,7 @@ default_dict = {
         "n_dwarfs": np.nan,
         "random_seed_sampling": np.nan,
         "params": {
-            "distance": None,
+            "dist": None,
             "m_v": None,
             "surface_brightness": None,
             "ellipticity": None,

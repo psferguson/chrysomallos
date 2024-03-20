@@ -28,7 +28,7 @@ class MVTest(unittest.TestCase):
             cdMatrix=afwGeom.makeCdMatrix(scale=0.175*geom.arcseconds),
         )
 
-        distance = 1.0  # Distance in Mpc
+        dist = 1.0  # Distance in Mpc
         MV_out = []
         for m_v in mv_vals:
             cat = adopt_a_cat(
@@ -38,7 +38,7 @@ class MVTest(unittest.TestCase):
                 random_seed=None,
             )
             vmags = sdss_g_to_V(cat['g_mag'], cat['r_mag'])
-            MV_out = totmag(vmags)-dist_to_dmod(distance*1.0e6)
+            MV_out = totmag(vmags)-dist_to_dmod(dist*1.0e6)
             self.assertAlmostEqual(m_v, MV_out, delta=0.2)
 
 if __name__ == "__main__":

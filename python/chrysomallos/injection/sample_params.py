@@ -1,5 +1,3 @@
-# class GenerateParams():
-#     distance_sampler:
 import os
 
 import fitsio
@@ -27,7 +25,7 @@ OUT_ORDER = [
     "y_cen",
     "ra",
     "dec",
-    "distance",
+    "dist",
     "m_v",
     "surface_brightness",
     "ellipticity",
@@ -204,15 +202,15 @@ class DwarfParamSampler:
             vals = sb_rh_to_mv(
                 sb=df["surface_brightness"],
                 rh=df["surface_scale"],
-                distance=df["distance"],
+                dist=df["dist"],
             )
         elif calc_param == "r_scale":
             vals = sb_mv_to_rh(
-                sb=df["surface_brightness"], M_v=df["m_v"], distance=df["distance"]
+                sb=df["surface_brightness"], M_v=df["m_v"], dist=df["dist"]
             )
         elif calc_param == "surface_brightness":
             vals = rh_mv_to_sb(
-                M_v=df["m_v"], rh=df["surface_scale"], distance=df["distance"]
+                M_v=df["m_v"], rh=df["surface_scale"], dist=df["dist"]
             )
         else:
             raise Exception(f"unknown calc param: {calc_param}")

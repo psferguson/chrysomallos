@@ -17,7 +17,7 @@ sampling:
   params:
     age: 10
     dec: null
-    distance: [2,3,'linear']
+    dist: [2,3,'linear']
     ellipticity: [0,0.5, 'linear']
     feh: -2.0
     m_v: [-9,-5,'linear'] # this should go to -11

@@ -27,7 +27,7 @@ class TestAdoptACat(unittest.TestCase):
             "ra",
             "dec",
             "source_type",
-            "distance",
+            "dist",
             "g_mag",
         ]
         self.assertTrue(all(column in cat.columns for column in expected_columns))

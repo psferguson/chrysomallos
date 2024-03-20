@@ -151,7 +151,7 @@ def adopt_a_cat(
             "ra": radec_coords[0],
             "dec": radec_coords[1],
             "source_type": ["DeltaFunction"] * len(ssp.mags),
-            "distance": dist_column,
+            "dist": dist_column,
             "g_mag": g_ext,
             "r_mag": r_ext,
             "i_mag": i_ext,
@@ -262,7 +262,7 @@ def massage_the_cat(
 
     # I think instead of including distance, I need to convert the radius
     # into a sky radius instead of physical. CHECK THIS!
-    cat[-1]["distance"] = dist
+    cat[-1]["dist"] = dist
 
     # We need Sersic index, position angle, axis ratio, and semimajor axis for
     # the galaxy model,

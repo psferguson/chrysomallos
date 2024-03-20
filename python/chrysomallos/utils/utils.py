@@ -132,14 +132,14 @@ def mag_at_flux_percentile(mags, pct):
     return mag_at_pct
 
 
-def rad_physical_to_sky(radius, distance):
+def rad_physical_to_sky(radius, dist):
     """Convert a physical size at a given distance to angular size on the sky.
 
     Parameters
     ----------
     radius : `float`
         Radius (size) you wish to convert, in pc
-    distance : `float`
+    dist : `float`
         Distance in Mpc
 
     Returns
@@ -148,8 +148,8 @@ def rad_physical_to_sky(radius, distance):
         Radius converted to arseconds.
     """
     radius = radius * u.pc
-    distance = distance * u.Mpc
-    angle = radius / (distance.to(u.pc)) * u.rad
+    dist = dist * u.Mpc
+    angle = radius / (dist.to(u.pc)) * u.rad
     return angle.to(u.arcsec).value
 
 
@@ -244,7 +244,7 @@ def mstar_from_absmag(m_v, m_to_l=1.6):
     return mstars
 
 
-def rh_mv_to_sb(rh, M_v, distance):
+def rh_mv_to_sb(rh, M_v, dist):
     """
     From an input surface brightness and half-light radius, calculate
     the absolute magnitude. Assumes a circular dwarf (i.e., radius, not a).
@@ -255,7 +255,7 @@ def rh_mv_to_sb(rh, M_v, distance):
         Half-light radius (in pc) of the satellite
     M_v : `float`
         Absolute luminosity (V-band absolute magnitude) of the satellite
-    distance : `float`, pc
+    dist : `float`, pc
         Distance to the satellite (in pc)
 
     Returns
@@ -265,16 +265,16 @@ def rh_mv_to_sb(rh, M_v, distance):
 
     """
 
-    r_over_d_radians = rh / distance
+    r_over_d_radians = rh / dist
     r_over_d_arcsec = np.rad2deg(r_over_d_radians) * 3600.0
     area_arcsec = np.pi * (r_over_d_arcsec**2)
-    mv = M_v + 5.0 * np.log10(distance) - 5.0
+    mv = M_v + 5.0 * np.log10(dist) - 5.0
     sb = mv + 2.5 * np.log10(area_arcsec)
 
     return sb
 
 
-def sb_rh_to_mv(sb, rh, distance):
+def sb_rh_to_mv(sb, rh, dist):
     """
     From an input surface brightness and half-light radius, calculate
     the absolute magnitude. Assumes a circular dwarf (i.e., radius, not a).
@@ -285,7 +285,7 @@ def sb_rh_to_mv(sb, rh, distance):
         Surface brightness within r_half (in mag/arcsec**2) of the satellite
     rh : `float`, pc
         Half-light radius (in pc) of the satellite
-    distance : `float`, pc
+    dist : `float`, pc
         Distance to the satellite (in pc)
 
     Returns
@@ -295,15 +295,15 @@ def sb_rh_to_mv(sb, rh, distance):
 
     """
 
-    r_over_d_radians = rh / distance
+    r_over_d_radians = rh / dist
     r_over_d_arcsec = np.rad2deg(r_over_d_radians) * 3600.0
     area_arcsec = np.pi * (r_over_d_arcsec**2)
     m_v = sb - 2.5*np.log10(area_arcsec)
-    M_V = m_v - 5.0*np.log10(distance) + 5.0
+    M_V = m_v - 5.0*np.log10(dist) + 5.0
     return M_V
 
 
-def sb_mv_to_rh(sb, M_v, distance):
+def sb_mv_to_rh(sb, M_v, dist):
     """
     From an input surface brightness and half-light radius, calculate
     the absolute magnitude. Assumes a circular dwarf (i.e., radius, not a).
@@ -314,7 +314,7 @@ def sb_mv_to_rh(sb, M_v, distance):
         Surface brightness within r_half (in mag/arcsec**2) of the satellite
     M_v : `float`
         Absolute luminosity (V-band absolute magnitude) of the satellite
-    distance : `float`, pc
+    dist : `float`, pc
         Distance to the satellite (in pc)
 
     Returns
@@ -323,11 +323,11 @@ def sb_mv_to_rh(sb, M_v, distance):
         Half-light radius (in pc) of the satellite
 
     """
-    m_v = M_v + 5.0*np.log10(distance) - 5.0
-    rh_over_distance_arcsec = np.sqrt((10.0**((sb-m_v)/2.5))/np.pi)
-    rh_over_distance_deg = rh_over_distance_arcsec/3600.0
-    rh_over_distance_rad = np.deg2rad(rh_over_distance_deg)
-    rh = rh_over_distance_rad * distance
+    m_v = M_v + 5.0*np.log10(dist) - 5.0
+    rh_over_dist_arcsec = np.sqrt((10.0**((sb-m_v)/2.5))/np.pi)
+    rh_over_dist_deg = rh_over_dist_arcsec/3600.0
+    rh_over_dist_rad = np.deg2rad(rh_over_dist_deg)
+    rh = rh_over_dist_rad * dist
     return rh
 
 
