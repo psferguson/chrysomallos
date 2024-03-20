@@ -120,7 +120,8 @@ class DwarfParamSampler:
 
         self.dwarf_param_frame["ra"] = ra
         self.dwarf_param_frame["dec"] = dec
-
+        
+        assert set(self.dwarf_param_frame.columns) == set(OUT_ORDER), f"DataFrame columns mismatch. Expected: {set(OUT_ORDER)}, Found: {set(self.dwarf_param_frame.columns)}"
         self.dwarf_param_frame = self.dwarf_param_frame[OUT_ORDER]
         if write:
             logger.info("saving generated params")
