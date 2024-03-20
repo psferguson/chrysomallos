@@ -1,12 +1,11 @@
 import unittest
 
+import lsst.afw.geom as afwGeom
+import lsst.geom as geom
 import numpy as np
 
-from chrysomallos.utils import dist_to_dmod, sdss_g_to_V, totmag
 from chrysomallos.injection import adopt_a_cat
-
-import lsst.geom as geom
-import lsst.afw.geom as afwGeom
+from chrysomallos.utils import dist_to_dmod, sdss_g_to_V, totmag
 
 
 class MVTest(unittest.TestCase):
@@ -25,21 +24,31 @@ class MVTest(unittest.TestCase):
         wcs_fake = afwGeom.makeSkyWcs(
             crpix=geom.Point2D(17999, 17999),
             crval=geom.SpherePoint(110.0, 39.3, geom.degrees),
-            cdMatrix=afwGeom.makeCdMatrix(scale=0.175*geom.arcseconds),
+            cdMatrix=afwGeom.makeCdMatrix(scale=0.175 * geom.arcseconds),
         )
 
         dist = 1.0  # Distance in Mpc
         MV_out = []
         for m_v in mv_vals:
             cat = adopt_a_cat(
-                wcs_fake, bbox_fake, age=10.0, feh=-2.0, dist=1.0,
-                r_scale=100.0, ellip=0, theta=0, n=1,
-                m_v=m_v, mag_limit=36.0, mag_limit_band="LSST_g",
+                wcs_fake,
+                bbox_fake,
+                age=10.0,
+                feh=-2.0,
+                dist=1.0,
+                r_scale=100.0,
+                ellip=0,
+                theta=0,
+                n=1,
+                m_v=m_v,
+                mag_limit=36.0,
+                mag_limit_band="LSST_g",
                 random_seed=None,
             )
-            vmags = sdss_g_to_V(cat['g_mag'], cat['r_mag'])
-            MV_out = totmag(vmags)-dist_to_dmod(dist*1.0e6)
+            vmags = sdss_g_to_V(cat["g_mag"], cat["r_mag"])
+            MV_out = totmag(vmags) - dist_to_dmod(dist * 1.0e6)
             self.assertAlmostEqual(m_v, MV_out, delta=0.2)
+
 
 if __name__ == "__main__":
     unittest.main()

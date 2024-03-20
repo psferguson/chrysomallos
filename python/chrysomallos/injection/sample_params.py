@@ -45,6 +45,7 @@ PARAMS_NOT_SAMPLED = [
     "random_seed_injection",
 ]
 
+
 class DwarfParamSampler:
     """
     Samples parameters for dwarf galaxies based on configuration settings.
@@ -120,8 +121,11 @@ class DwarfParamSampler:
 
         self.dwarf_param_frame["ra"] = ra
         self.dwarf_param_frame["dec"] = dec
-        
-        assert set(self.dwarf_param_frame.columns) == set(OUT_ORDER), f"DataFrame columns mismatch. Expected: {set(OUT_ORDER)}, Found: {set(self.dwarf_param_frame.columns)}"
+
+        assert set(self.dwarf_param_frame.columns) == set(OUT_ORDER), (
+            f"DataFrame columns mismatch. Expected: {set(OUT_ORDER)}"
+            f", Found: {set(self.dwarf_param_frame.columns)}"
+        )
         self.dwarf_param_frame = self.dwarf_param_frame[OUT_ORDER]
         if write:
             logger.info("saving generated params")
@@ -210,9 +214,7 @@ class DwarfParamSampler:
                 sb=df["surface_brightness"], M_v=df["m_v"], dist=df["dist"]
             )
         elif calc_param == "surface_brightness":
-            vals = rh_mv_to_sb(
-                M_v=df["m_v"], rh=df["surface_scale"], dist=df["dist"]
-            )
+            vals = rh_mv_to_sb(M_v=df["m_v"], rh=df["surface_scale"], dist=df["dist"])
         else:
             raise Exception(f"unknown calc param: {calc_param}")
         return vals

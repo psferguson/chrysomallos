@@ -31,7 +31,7 @@ sampling:
     y_cen: [300,3800,'linear']
     random_seed_injection: null
   output_file: "example_dwarf_params.csv"
-  output_directory: ./round_3_params/ 
+  output_directory: ./round_3_params/
   random_seed_sampling: null
   type: sample
 stamp:
