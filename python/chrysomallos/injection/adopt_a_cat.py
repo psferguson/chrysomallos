@@ -28,7 +28,7 @@ def adopt_a_cat(
     r_scale=300.0,
     ellip=0,
     theta=0,
-    n=1,
+    n_sersic=1,
     m_v=None,
     mag_limit=36.0,
     mag_limit_band="LSST_g",
@@ -57,7 +57,7 @@ def adopt_a_cat(
         ellipticity between 0:1. e=1-b/a
     theta: `float`
         position angle in deg
-    n: `float`
+    n_sersic: `float`
         sersic index
     m_v: `float`
         Absolute V-band mag of dwarf to inject. Overrides "stellar_mass" if
@@ -99,7 +99,7 @@ def adopt_a_cat(
         r_eff=r_scale,
         ellip=ellip,
         theta=theta,
-        n=n,
+        n=n_sersic,
         phot_system="LSST",  # photometric system
         imf="kroupa",  # default imf
         xy_dim=xydim,  # half the size of an LSST patch
