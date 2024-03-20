@@ -90,7 +90,7 @@ class CreateDwarfInjectionCatalog:
                             x_cen=self.dwarf_params_frame["x_cen"][i],
                             y_cen=self.dwarf_params_frame["y_cen"][i],
                             r_scale=self.dwarf_params_frame["r_scale"][i],
-                            dist=self.dwarf_params_frame["distance"][i],
+                            dist=self.dwarf_params_frame["dist"][i],
                         )
                     )
             for band in self.config["pipelines"]["bands"]:
@@ -124,7 +124,7 @@ class CreateDwarfInjectionCatalog:
                         x_cen=self.dwarf_params_frame["x_cen"][i],
                         y_cen=self.dwarf_params_frame["y_cen"][i],
                         r_scale=self.dwarf_params_frame["r_scale"][i],
-                        dist=self.dwarf_params_frame["distance"][i],
+                        dist=self.dwarf_params_frame["dist"][i],
                     )
         else:
             raise Exception(
@@ -191,11 +191,11 @@ class CreateDwarfInjectionCatalog:
             age=row["age"],
             feh=row["feh"],
             stellar_mass=row["stellar_mass"],
-            dist=row["distance"],
+            dist=row["dist"],
             r_scale=row["r_scale"],
-            ellip=row["ellipticity"],
+            ellip=row["ellip"],
             theta=row["theta"],
-            n=row["n"],
+            n=row["n_sersic"],
             m_v=row["m_v"],
             mag_limit=36,  # notice this is set to be deeper
             mag_limit_band=mag_limit_band,

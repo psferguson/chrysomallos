@@ -1,5 +1,3 @@
-# class GenerateParams():
-#     distance_sampler:
 import os
 
 import fitsio
@@ -27,16 +25,16 @@ OUT_ORDER = [
     "y_cen",
     "ra",
     "dec",
-    "distance",
+    "dist",
     "m_v",
     "surface_brightness",
-    "ellipticity",
+    "ellip",
     "theta",
     "age",
     "feh",
     "stellar_mass",
     "r_scale",
-    "n",
+    "n_sersic",
     "random_seed_injection",
 ]
 
@@ -46,6 +44,7 @@ PARAMS_NOT_SAMPLED = [
     "stellar_mass",
     "random_seed_injection",
 ]
+
 
 class DwarfParamSampler:
     """
@@ -123,6 +122,10 @@ class DwarfParamSampler:
         self.dwarf_param_frame["ra"] = ra
         self.dwarf_param_frame["dec"] = dec
 
+        assert set(self.dwarf_param_frame.columns) == set(OUT_ORDER), (
+            f"DataFrame columns mismatch. Expected: {set(OUT_ORDER)}"
+            f", Found: {set(self.dwarf_param_frame.columns)}"
+        )
         self.dwarf_param_frame = self.dwarf_param_frame[OUT_ORDER]
         if write:
             logger.info("saving generated params")
@@ -204,16 +207,14 @@ class DwarfParamSampler:
             vals = sb_rh_to_mv(
                 sb=df["surface_brightness"],
                 rh=df["surface_scale"],
-                distance=df["distance"],
+                dist=df["dist"],
             )
         elif calc_param == "r_scale":
             vals = sb_mv_to_rh(
-                sb=df["surface_brightness"], M_v=df["m_v"], distance=df["distance"]
+                sb=df["surface_brightness"], M_v=df["m_v"], dist=df["dist"]
             )
         elif calc_param == "surface_brightness":
-            vals = rh_mv_to_sb(
-                M_v=df["m_v"], rh=df["surface_scale"], distance=df["distance"]
-            )
+            vals = rh_mv_to_sb(M_v=df["m_v"], rh=df["surface_scale"], dist=df["dist"])
         else:
             raise Exception(f"unknown calc param: {calc_param}")
         return vals

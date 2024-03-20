@@ -29,10 +29,10 @@ default_dict = {
         "n_dwarfs": np.nan,
         "random_seed_sampling": np.nan,
         "params": {
-            "distance": None,
+            "dist": None,
             "m_v": None,
             "surface_brightness": None,
-            "ellipticity": None,
+            "ellip": None,
             "theta": None,
             "x_cen": None,
             "y_cen": None,
@@ -40,13 +40,13 @@ default_dict = {
             "feh": None,
             "stellar_mass": None,
             "r_scale": None,
-            "n": None,
+            "n_sersic": None,
             "ra": None,
             "dec": None,
             "random_seed_injection": None,
         },
         "output_file": None,
-        "output_directory": "./"
+        "output_directory": "./",
     },
     "injection": {
         "dwarfs": None,

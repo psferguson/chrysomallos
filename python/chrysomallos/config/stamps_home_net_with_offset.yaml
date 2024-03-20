@@ -17,8 +17,8 @@ sampling:
   params:
     age: 10
     dec: null
-    distance: [2,3,'linear']
-    ellipticity: [0,0.5, 'linear']
+    dist: [2,3,'linear']
+    ellip: [0,0.5, 'linear']
     feh: -2.0
     m_v: [-10,-4,'linear'] # this should go to -11
     r_scale: null
@@ -31,7 +31,7 @@ sampling:
     y_cen: [300,3800,'linear']
     random_seed_injection: null
   output_file: "example_dwarf_params.csv"
-  output_directory: ./round_3_params/ 
+  output_directory: ./round_3_params/
   random_seed_sampling: null
   type: sample
 stamp:
