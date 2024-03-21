@@ -1,0 +1,7 @@
+# -*- python -*-
+from lsst.sconsUtils import env, scripts
+import os
+scripts.BasicSConscript.tests(pyList=[])
+
+if "DUSTMAPS_CONFIG_FNAME" in os.environ:
+    env["ENV"]["DUSTMAPS_CONFIG_FNAME"] = os.environ["DUSTMAPS_CONFIG_FNAME"]

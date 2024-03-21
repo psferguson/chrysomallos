@@ -50,7 +50,7 @@ class PostageStampGenerator:
         Executes the process of generating and saving postage stamps
         for each dwarf galaxy in the input frame.
         """
-        
+
         # setup injection task
         inject_config = si.CoaddInjectConfig()
         inject_task = si.CoaddInjectTask(config=inject_config)
@@ -69,9 +69,13 @@ class PostageStampGenerator:
             # number of sources we are injecting
             cat_length = len(self.dwarf_catalogs[first_band][i])
 
-            x_offset = np.random.uniform(-int(stamp_x_size / 2.2), int(stamp_x_size / 2.2))
-            y_offset = np.random.uniform(-int(stamp_y_size / 2.2), int(stamp_y_size / 2.2))
-            
+            x_offset = np.random.uniform(
+                -int(stamp_x_size / 2.2), int(stamp_x_size / 2.2)
+            )
+            y_offset = np.random.uniform(
+                -int(stamp_y_size / 2.2), int(stamp_y_size / 2.2)
+            )
+
             # make title of stamp
             title = self.make_stamp_title(
                 stamp_directory=self.config["stamp"]["directory"],
@@ -87,9 +91,7 @@ class PostageStampGenerator:
             )
 
             logger.info(f"creating {title} with {cat_length} sources.")
-            
-            
-            
+
             start_time = time.time()
             for band in self.config["pipelines"]["bands"]:
                 image = self.coadd_dict[band]["image"]
@@ -124,12 +126,12 @@ class PostageStampGenerator:
                     wcs=wcs,
                 )
                 exposure = inject_output.output_exposure
-                
+
                 stamp_range = [
                     minx + x_cen - int(stamp_x_size / 2) + x_offset,
                     minx + x_cen + int(stamp_x_size / 2) + x_offset,
                     miny + y_cen - int(stamp_y_size / 2) + y_offset,
-                    miny + y_cen + int(stamp_y_size / 2) + y_offset
+                    miny + y_cen + int(stamp_y_size / 2) + y_offset,
                 ]
 
                 injection_dict[band] = exposure.image[
@@ -252,7 +254,8 @@ class PostageStampGenerator:
         """
         band_str = "".join(bands)
         filename = stamp_directory + stamp_title_prefix + "_"
-        filename += f"{tract}_{patch}_{dwarf_id}_{ra:0.2f}_{dec:0.2f}_{band_str}_offset_{x_offset:0.0f}_{y_offset:0.0f}.png"
+        filename += f"{tract}_{patch}_{dwarf_id}_{ra:0.2f}_{dec:0.2f}_{band_str}"
+        filename += f"_offset_{x_offset:0.0f}_{y_offset:0.0f}.png"
         return filename
 
     def save_stamp_as_fits(self, stamp_directory, title, injection_dict):
