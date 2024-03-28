@@ -4,5 +4,10 @@
 *.csv
 *.fits
 *.png
+*.xml*
 stamps/*
 .coverage
+.sconsign.dblite
+python/lsst/chrysomallos/version.py
+tests/.tests/linter-flake8.log
+config.log

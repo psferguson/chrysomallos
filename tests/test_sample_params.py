@@ -8,6 +8,26 @@ from numpy.testing import assert_array_almost_equal
 from chrysomallos import DwarfParamSampler
 
 
+def create_fake_coadd_dict(bands=["g"]):
+    coadd_dict = {}
+    for band in bands:
+        coadd_dict[band] = {
+            "image": [],
+            "wcs": afwGeom.makeSkyWcs(
+                crpix=geom.Point2D(17999, 17999),
+                crval=geom.SpherePoint(110.0, 39.3, geom.degrees),
+                cdMatrix=afwGeom.makeCdMatrix(scale=0.175 * geom.arcseconds),
+            ),
+            "bbox": geom.Box2I(
+                corner=geom.Point2I(11900, 0),
+                dimensions=geom.Extent2I(4200, 4100),
+            ),
+            "psf": [],
+            "photo_calib": [],
+        }
+    return coadd_dict
+
+
 class TestDwarfParamSampler(unittest.TestCase):
     def setUp(self):
         self.r_scale_vals = np.array(
@@ -61,26 +81,8 @@ class TestDwarfParamSampler(unittest.TestCase):
                 "type": "sample",
             },
         }
-        self.coadd_dict = self.create_fake_coadd_dict()
+        self.coadd_dict = create_fake_coadd_dict()
         self.sampler = DwarfParamSampler(self.config, self.coadd_dict)
-
-    def create_fake_coadd_dict(self):
-        return {
-            "g": {
-                "image": [],
-                "wcs": afwGeom.makeSkyWcs(
-                    crpix=geom.Point2D(17999, 17999),
-                    crval=geom.SpherePoint(110.0, 39.3, geom.degrees),
-                    cdMatrix=afwGeom.makeCdMatrix(scale=0.175 * geom.arcseconds),
-                ),
-                "bbox": geom.Box2I(
-                    corner=geom.Point2I(11900, 0),
-                    dimensions=geom.Extent2I(4200, 4100),
-                ),
-                "psf": [],
-                "photo_calib": [],
-            }
-        }
 
     def test_regular_sample(self):
         dwarf_df, _ = self.sampler.run()
