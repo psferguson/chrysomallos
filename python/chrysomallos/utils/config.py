@@ -27,6 +27,7 @@ default_dict = {
         # sample or grid
         "type": None,
         "n_dwarfs": np.nan,
+        "generation_id": np.nan,
         "random_seed_sampling": np.nan,
         "params": {
             "dist": None,
@@ -50,13 +51,17 @@ default_dict = {
     },
     "injection": {
         "dwarfs": None,
-        "mag_limit": np.nan,
+        "inject_mag_limit": np.nan,
         "mag_limit_band": None,
+        "replace_mag_limit": np.nan,
         "ingest": False,
         "output_collection": None,
         "type": None,  # either "grid" or "stamp"
     },
     "stamp": {
+        "annotation": False,
+        "annotation_scaling": np.nan,
+        "version": None,
         "directory": "./stamps",
         "size": None,
         "title_format": "test_stamp_d_{}_mv_{}_sb_{}_r_{}.png",
@@ -136,12 +141,15 @@ class Config(dict):
     def _update_params(self, config):
         for key in config.keys():
             if key not in self.keys():
-                logger.info(f"key '{key}' is not in the default config")
+                logger.info(
+                    f"key '{key}' is not in the default config and is not applied"
+                )
+                # recognized configs are in the dict at the top of this file
                 continue
             for sub_key in config[key].keys():
                 if sub_key not in self[key].keys():
                     logger.info(
-                        f"key ['{key}']['{sub_key}'] is not in the default config"
+                        f"key ['{key}']['{sub_key}'] is not in the default config and is not appied"
                     )
                     continue
                 if (key == "sampling") and (sub_key == "params"):

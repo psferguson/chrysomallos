@@ -50,7 +50,7 @@ def totmag(mags):
     return mag_tot
 
 
-def totmag_below_maglim(mags, maglim):
+def totmag_below_maglim(mags, ref_mags, ref_maglim):
     """Calculate the total magnitude of an input list of stars
          below some limiting mag.
 
@@ -58,8 +58,10 @@ def totmag_below_maglim(mags, maglim):
     ----------
     mags : `np.array`
         List of mags to sum.
-    maglim : `float`
-        Sum only stars fainter than the maglim threshold.
+    ref_mags: `np.array`
+        List of mags in the reference band, to apply consistent selection.
+    ref_maglim : `float`
+        Sum only stars fainter than the maglim threshold in the reference band.
 
     Returns
     -------
@@ -67,7 +69,7 @@ def totmag_below_maglim(mags, maglim):
         Total magnitude of all stars with mag >= maglim from input list.
     """
 
-    select_mags = mags >= maglim
+    select_mags = ref_mags >= ref_maglim
     if select_mags.sum() > 1:
         mag_below_threshold = totmag(mags[select_mags])
     else:

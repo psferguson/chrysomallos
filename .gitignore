@@ -6,3 +6,4 @@
 *.png
 stamps/*
 .coverage
+stamps
