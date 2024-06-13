@@ -35,7 +35,9 @@ OUT_ORDER = [
     "stellar_mass",
     "r_scale",
     "n_sersic",
+    "n",
     "random_seed_injection",
+    "dwarf_generation_id",
 ]
 
 PARAMS_NOT_SAMPLED = [
@@ -112,6 +114,9 @@ class DwarfParamSampler:
         self.dwarf_param_frame["tract"] = self.config["pipelines"]["tract"]
         self.dwarf_param_frame["patch"] = self.config["pipelines"]["patch"]
         self.dwarf_param_frame["id"] = self.dwarf_param_frame.index
+        self.dwarf_param_frame["dwarf_generation_id"] = self.config["sampling"][
+            "generation_id"
+        ]
         # get mstar_from_absmag populate mstar
         self.dwarf_param_frame["stellar_mass"] = mstar_from_absmag(
             self.dwarf_param_frame["m_v"]
@@ -121,6 +126,7 @@ class DwarfParamSampler:
 
         self.dwarf_param_frame["ra"] = ra
         self.dwarf_param_frame["dec"] = dec
+        self.dwarf_param_frame["n"] = self.dwarf_param_frame["n_sersic"]
 
         assert set(self.dwarf_param_frame.columns) == set(OUT_ORDER), (
             f"DataFrame columns mismatch. Expected: {set(OUT_ORDER)}"

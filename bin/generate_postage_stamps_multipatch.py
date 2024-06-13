@@ -12,14 +12,25 @@ from chrysomallos.utils import Config, logger
 
 
 def run_single_config(args):
-    tract, patch, sampling_seed = args
+    tract, patch, sampling_seed, config_dict = args
 
-    config_dict = "./config/stamps_home_net.yaml"
+    # config_dict = "./config/stamps_home_net.yaml"
     config = Config(config_dict)
 
     config["pipelines"]["tract"] = tract
     config["pipelines"]["patch"] = patch
-    config["sampling"]["output_file"] = f"round_3_tract_{tract}_patch_{patch}.csv"
+    config["sampling"]["generation_id"] = np.random.randint(0, 1000000)
+    # sample dwarfs from 1 to 4
+    ndwarfs = np.random.randint(3, 4)
+    config["sampling"]["n_dwarfs"] = ndwarfs
+    if config["stamp"]["version"] is not None:
+        version = config["stamp"]["version"]
+        config["sampling"]["output_directory"] = f"./round_{version}_params/"
+        config["stamp"]["directory"] = f"./stamps/round_{version}/"
+        config["stamp"]["title_format"] = f"hsc_stamp_r_{version}"
+    config["sampling"][
+        "output_file"
+    ] = f"round_{version}_tract_{tract}_patch_{patch}_{config['sampling']['generation_id']}.csv"
     config["sampling"]["random_seed_sampling"] = sampling_seed
 
     sampler = DwarfParamSampler(config)
@@ -31,16 +42,24 @@ def run_single_config(args):
         ingest=False,
         multiproc=False,
     )
+    # import pdb; pdb.set_trace()
+    # from astropy.table import vstack
 
+    # cats= catalogs['g']
+    # clist=[]
+    # for key in cats.keys():
+    #     clist.append(cats[key])
+    # clist=vstack(clist)
+    # clist.to_pandas().to_csv('test_annotation_vals')
+    # import pdb; pdb.set_trace()
     postage_stamp_generator = PostageStampGenerator(
         config=config,
         dwarf_params_frame=dwarf_params_frame,
         dwarf_catalogs=catalogs,
         coadd_dict=coadd_dict,
     )
-
     postage_stamp_generator.run()
-    postage_stamp_generator.generate_empty_stamps(config["stamp"]["n_empty"])
+    # postage_stamp_generator.generate_empty_stamps(config["stamp"]["n_empty"])
 
 
 def run_configs(stamp_list, multiproc=False):
@@ -75,8 +94,8 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
     force_sampling = args.force_sampling
-    patches = [1, 28, 31, 34, 36, 42, 63, 64, 65, 67, 73, 79]
-    tracts = [9615, 9697, 9813]
+    patches = [1]  # , 28, 31, 34, 36, 42, 63, 64, 65, 67, 73, 79]
+    tracts = [9615]  # , 9697, 9813]
     from glob import glob
 
     flist = glob(
@@ -85,7 +104,7 @@ if __name__ == "__main__":
     directory = "deepCoadd_repo/HSC/runs/RC2/w_2023_32/DM-40356/20230819T003257Z/deepCoadd_calexp/"
     stamp_list = []
     for tract in tracts:
-        for patch in np.arange(81):
+        for patch in patches:
             band_count = 0
             for band in ["g", "r", "i"]:
                 if os.path.exists(
@@ -93,6 +112,8 @@ if __name__ == "__main__":
                 ):
                     band_count += 1
             if band_count == 3:
-                stamp_list.append((tract, patch, np.random.randint(0, 1000000)))
+                stamp_list.append(
+                    (tract, patch, np.random.randint(0, 1000000), args.config)
+                )
 
-    run_configs(stamp_list, multiproc=36)
+    run_configs(stamp_list, multiproc=False)

@@ -5,10 +5,12 @@ import fitsio
 import lsst.source.injection as si
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 from astropy.visualization import make_lupton_rgb
 from tqdm import tqdm
 
 from chrysomallos.utils import logger
+from chrysomallos.utils.annotations import get_anotation_box
 
 __all__ = [
     "PostageStampGenerator",
@@ -46,6 +48,12 @@ class PostageStampGenerator:
             )
 
     def run(self):
+        if self.config["stamp"]["size"] == "full_patch":
+            self.run_full_patch_stamps()
+        else:
+            self.run_cropped_stamps()
+
+    def run_cropped_stamps(self):
         """
         Executes the process of generating and saving postage stamps
         for each dwarf galaxy in the input frame.
@@ -149,8 +157,128 @@ class PostageStampGenerator:
             )
             end_time = time.time()
             logger.info(
-                f"Time to create stamp with {cat_length} sources: {end_time - start_time:0.2f} seconds"
+                f"Time to create stamp with {cat_length} sources: {end_time - start_time: 0.2f} seconds"
             )
+
+    def run_full_patch_stamps(self):
+        """
+        Executes the process of generating and saving postage stamps
+        for each dwarf galaxy in the input frame.
+        """
+
+        # setup injection task
+        inject_config = si.CoaddInjectConfig()
+        inject_task = si.CoaddInjectTask(config=inject_config)
+
+        first_band = self.config["pipelines"]["bands"][0]
+
+        stamp_x_size = (
+            self.coadd_dict[first_band]["bbox"].maxX
+            - self.coadd_dict[first_band]["bbox"].minX
+        )
+        stamp_y_size = (
+            self.coadd_dict[first_band]["bbox"].maxY
+            - self.coadd_dict[first_band]["bbox"].minY
+        )
+
+        fig, ax = self.create_axes_for_stamps(
+            stamp_x_size=stamp_x_size, stamp_y_size=stamp_y_size, dpi=100
+        )
+        # make title of stamp
+        title = self.make_full_patch_title(
+            stamp_directory=self.config["stamp"]["directory"],
+            stamp_title_prefix=self.config["stamp"]["title_format"],
+            tract=self.config["pipelines"]["tract"],
+            patch=self.config["pipelines"]["patch"],
+            ndwarf=self.config["sampling"]["n_dwarfs"],
+            bands=self.config["pipelines"]["bands"],
+        )
+        # need to loop over bands and combine catalogs for injection
+        injection_dict = {}
+        start_time = time.time()
+        coco_annotation = True
+        if coco_annotation:
+            annotation_list = []
+            wcs = self.coadd_dict[first_band]["wcs"]
+            bbox = self.coadd_dict[first_band]["bbox"]
+            for i in range(self.config["sampling"]["n_dwarfs"]):
+                x_cen = self.dwarf_params_frame["x_cen"][i]
+                y_cen = self.dwarf_params_frame["y_cen"][i]
+
+                annotation_list.append(
+                    get_anotation_box(
+                        wcs,
+                        bbox,
+                        x_cen,
+                        y_cen,
+                        r_scale=self.dwarf_params_frame["r_scale"][i],
+                        theta=self.dwarf_params_frame["theta"][i],
+                        ellip=self.dwarf_params_frame["ellip"][i],
+                    )
+                )
+
+            annotation_frame = pd.concat(
+                [pd.DataFrame([i]) for i in annotation_list]
+            ).reset_index(drop=True)
+            annotation_frame.to_csv(title.replace(".png", ".csv"))
+
+        for band in self.config["pipelines"]["bands"]:
+            image = self.coadd_dict[band]["image"]
+            input_exposure = image.clone()
+            psf = self.coadd_dict[band]["psf"]
+            photo_calib = self.coadd_dict[band]["photo_calib"]
+            wcs = self.coadd_dict[band]["wcs"]
+            bbox = self.coadd_dict[band]["bbox"]
+
+            injection_catalogs = []
+            for i in tqdm(range(self.config["sampling"]["n_dwarfs"])):
+                # number of sources we are injecting
+                cat_length = len(self.dwarf_catalogs[band][i])
+
+                x_cen = self.dwarf_params_frame["x_cen"][i]
+                y_cen = self.dwarf_params_frame["y_cen"][i]
+
+                # logger.info(f"creating {title} with {cat_length} sources.")
+
+                # crop injection catalog to stamp size
+                injection_catalog = self.crop_injection_catalog(
+                    catalog=self.dwarf_catalogs[band][i],
+                    band=band,
+                    x_cen=x_cen,
+                    y_cen=y_cen,
+                    stamp_x_size=stamp_x_size,
+                    stamp_y_size=stamp_y_size,
+                )
+
+                if ~np.isin("n", injection_catalog.colnames):
+                    injection_catalog.rename_column("n_sersic", "n")
+
+                injection_catalogs.append(injection_catalog)
+
+            inject_output = inject_task.run(
+                injection_catalogs=injection_catalogs,
+                input_exposure=input_exposure,
+                psf=psf,
+                photo_calib=photo_calib,
+                wcs=wcs,
+            )
+            exposure = inject_output.output_exposure
+
+            injection_dict[band] = exposure.image.array
+
+        self.make_one_stamp_png(
+            injection_dict=injection_dict,
+            title=title,
+            Q=self.config["stamp"]["Q"],
+            stretch=self.config["stamp"]["stretch"],
+            minimum=self.config["stamp"]["minimum"],
+            bands=self.config["pipelines"]["bands"],
+            ax=ax,
+        )
+        end_time = time.time()
+        logger.info(
+            f"Time to create stamp with {cat_length} sources: {end_time - start_time: 0.2f} seconds"
+        )
 
     def crop_injection_catalog(
         self, catalog, band, x_cen, y_cen, stamp_x_size, stamp_y_size
@@ -254,8 +382,35 @@ class PostageStampGenerator:
         """
         band_str = "".join(bands)
         filename = stamp_directory + stamp_title_prefix + "_"
-        filename += f"{tract}_{patch}_{dwarf_id}_{ra:0.2f}_{dec:0.2f}_{band_str}"
-        filename += f"_offset_{x_offset:0.0f}_{y_offset:0.0f}.png"
+        filename += f"{tract}_{patch}_{dwarf_id}_{ra: 0.2f}_{dec: 0.2f}_{band_str}"
+        filename += f"_offset_{x_offset: 0.0f}_{y_offset: 0.0f}.png"
+        return filename
+
+    def make_full_patch_title(
+        self,
+        stamp_directory,
+        stamp_title_prefix,
+        tract,
+        patch,
+        ndwarf,
+        bands,
+    ):
+        """
+        Generates a title for a postage stamp image file.
+
+        Parameters:
+        - stamp_directory: Directory where the stamp will be saved.
+        - stamp_title_prefix: Prefix for the stamp's filename.
+        - tract, patch: Tract and patch identifiers.
+        - dwarf_id: Identifier for the dwarf galaxy.
+        - ra, dec: Right ascension and declination of the galaxy.
+
+        Returns:
+        - Filename for the stamp image.
+        """
+        band_str = "".join(bands)
+        filename = stamp_directory + stamp_title_prefix + "_"
+        filename += f"{tract}_{patch}_{ndwarf}_{band_str}.png"
         return filename
 
     def save_stamp_as_fits(self, stamp_directory, title, injection_dict):
@@ -311,7 +466,7 @@ class PostageStampGenerator:
                 # make title
                 title = (
                     self.config["stamp"]["directory"]
-                    + f"empty_stamp_{tract}_{patch}_{i}_{ra[i]:0.2f}_{dec[i]:0.2f}.png"
+                    + f"empty_stamp_{tract}_{patch}_{i}_{ra[i]: 0.2f}_{dec[i]: 0.2f}.png"
                 )
 
                 # stamp parameters

@@ -27,6 +27,7 @@ default_dict = {
         # sample or grid
         "type": None,
         "n_dwarfs": np.nan,
+        "generation_id": np.nan,
         "random_seed_sampling": np.nan,
         "params": {
             "dist": None,
@@ -57,6 +58,7 @@ default_dict = {
         "type": None,  # either "grid" or "stamp"
     },
     "stamp": {
+        "version": None,
         "directory": "./stamps",
         "size": None,
         "title_format": "test_stamp_d_{}_mv_{}_sb_{}_r_{}.png",
