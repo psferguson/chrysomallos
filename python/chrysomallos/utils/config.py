@@ -59,6 +59,8 @@ default_dict = {
         "type": None,  # either "grid" or "stamp"
     },
     "stamp": {
+        "annotation": False,
+        "annotation_scaling": np.nan,
         "version": None,
         "directory": "./stamps",
         "size": None,
@@ -139,12 +141,15 @@ class Config(dict):
     def _update_params(self, config):
         for key in config.keys():
             if key not in self.keys():
-                logger.info(f"key '{key}' is not in the default config")
+                logger.info(
+                    f"key '{key}' is not in the default config and is not applied"
+                )
+                # recognized configs are in the dict at the top of this file
                 continue
             for sub_key in config[key].keys():
                 if sub_key not in self[key].keys():
                     logger.info(
-                        f"key ['{key}']['{sub_key}'] is not in the default config"
+                        f"key ['{key}']['{sub_key}'] is not in the default config and is not appied"
                     )
                     continue
                 if (key == "sampling") and (sub_key == "params"):

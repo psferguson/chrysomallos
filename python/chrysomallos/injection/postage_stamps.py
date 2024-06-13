@@ -192,28 +192,23 @@ class PostageStampGenerator:
             patch=self.config["pipelines"]["patch"],
             ndwarf=self.config["sampling"]["n_dwarfs"],
             bands=self.config["pipelines"]["bands"],
+            generation_id=self.config["sampling"]["generation_id"],
         )
         # need to loop over bands and combine catalogs for injection
         injection_dict = {}
         start_time = time.time()
-        coco_annotation = True
-        if coco_annotation:
+        annotation = self.config["stamp"]["annotation"]
+        if annotation:
             annotation_list = []
             wcs = self.coadd_dict[first_band]["wcs"]
             bbox = self.coadd_dict[first_band]["bbox"]
             for i in range(self.config["sampling"]["n_dwarfs"]):
-                x_cen = self.dwarf_params_frame["x_cen"][i]
-                y_cen = self.dwarf_params_frame["y_cen"][i]
-
                 annotation_list.append(
                     get_anotation_box(
-                        wcs,
-                        bbox,
-                        x_cen,
-                        y_cen,
-                        r_scale=self.dwarf_params_frame["r_scale"][i],
-                        theta=self.dwarf_params_frame["theta"][i],
-                        ellip=self.dwarf_params_frame["ellip"][i],
+                        wcs=wcs,
+                        bbox=bbox,
+                        dwarf_params=self.dwarf_params_frame.iloc[i],
+                        scaling_factor=self.config["stamp"]["annotation_scaling"],
                     )
                 )
 
@@ -222,7 +217,7 @@ class PostageStampGenerator:
             ).reset_index(drop=True)
             annotation_frame.to_csv(title.replace(".png", ".csv"))
 
-        for band in self.config["pipelines"]["bands"]:
+        for band in tqdm(self.config["pipelines"]["bands"]):
             image = self.coadd_dict[band]["image"]
             input_exposure = image.clone()
             psf = self.coadd_dict[band]["psf"]
@@ -231,14 +226,15 @@ class PostageStampGenerator:
             bbox = self.coadd_dict[band]["bbox"]
 
             injection_catalogs = []
-            for i in tqdm(range(self.config["sampling"]["n_dwarfs"])):
+            cat_length = 0
+            for i in range(self.config["sampling"]["n_dwarfs"]):
                 # number of sources we are injecting
-                cat_length = len(self.dwarf_catalogs[band][i])
+                cat_length += len(self.dwarf_catalogs[band][i])
 
                 x_cen = self.dwarf_params_frame["x_cen"][i]
                 y_cen = self.dwarf_params_frame["y_cen"][i]
 
-                # logger.info(f"creating {title} with {cat_length} sources.")
+                #
 
                 # crop injection catalog to stamp size
                 injection_catalog = self.crop_injection_catalog(
@@ -255,6 +251,8 @@ class PostageStampGenerator:
 
                 injection_catalogs.append(injection_catalog)
 
+            logger.info(f"creating {title}, {band}-band with {cat_length} sources.")
+
             inject_output = inject_task.run(
                 injection_catalogs=injection_catalogs,
                 input_exposure=input_exposure,
@@ -264,7 +262,16 @@ class PostageStampGenerator:
             )
             exposure = inject_output.output_exposure
 
-            injection_dict[band] = exposure.image.array
+            stamp_range = [
+                bbox.beginX,
+                bbox.endX,
+                bbox.beginY,
+                bbox.endY,
+            ]
+
+            injection_dict[band] = exposure.image[
+                stamp_range[0] : stamp_range[1], stamp_range[2] : stamp_range[3]
+            ].array
 
         self.make_one_stamp_png(
             injection_dict=injection_dict,
@@ -330,9 +337,14 @@ class PostageStampGenerator:
             stretch=stretch,
             minimum=minimum,
         )
-        ax.imshow(rgb)
-
-        plt.savefig(title, dpi=100)
+        plt.imsave(title, rgb)
+        # rgb=np.rot90(rgb)
+        # xmax, ymax = rgb.shape[:2]
+        # ax.imshow(rgb, origin="lower", extent=[0, xmax, 0, ymax])
+        # import pdb; pdb.set_trace()
+        # ax.axis('off')
+        # plt.tight_layout()
+        # plt.savefig(title, dpi=100, pad_inches=0.0)
 
     def create_axes_for_stamps(self, stamp_x_size=600, stamp_y_size=600, dpi=100):
         """
@@ -345,8 +357,8 @@ class PostageStampGenerator:
         Returns:
         - fig, ax: Matplotlib figure and axes objects.
         """
-        x_size_inches = int(stamp_x_size / dpi)
-        y_size_inches = int(stamp_y_size / dpi)
+        x_size_inches = stamp_x_size / dpi
+        y_size_inches = stamp_y_size / dpi
         fig, ax = plt.subplots(figsize=(x_size_inches, y_size_inches), dpi=dpi)
         ax.axis("off")
         fig.subplots_adjust(left=0, bottom=0, right=1, top=1, wspace=0, hspace=0)
@@ -394,6 +406,7 @@ class PostageStampGenerator:
         patch,
         ndwarf,
         bands,
+        generation_id,
     ):
         """
         Generates a title for a postage stamp image file.
@@ -410,7 +423,7 @@ class PostageStampGenerator:
         """
         band_str = "".join(bands)
         filename = stamp_directory + stamp_title_prefix + "_"
-        filename += f"{tract}_{patch}_{ndwarf}_{band_str}.png"
+        filename += f"{tract}_{patch}_ndwarf_{ndwarf}_{band_str}_{generation_id}.png"
         return filename
 
     def save_stamp_as_fits(self, stamp_directory, title, injection_dict):
@@ -437,6 +450,8 @@ class PostageStampGenerator:
         Parameters:
         - n_stamps: Number of empty stamps to generate.
         """
+        if n_stamps == 0:
+            return
         stamp_x_size = self.config["stamp"]["size"][0]
         stamp_y_size = self.config["stamp"]["size"][1]
         tract = self.config["pipelines"]["tract"]

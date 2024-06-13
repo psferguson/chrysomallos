@@ -22,7 +22,7 @@ sampling:
     dist: [2,3,'linear']
     ellip: [0,0.5, 'linear'] # should be 0 - 0.5
     feh: -2.0
-    m_v: [-9,-7,'linear']# [-10,-4,'linear'] # this should go to -11
+    m_v: [-9,-7,'linear'] # [-10,-4,'linear'] # this should go to -11
     r_scale: null
     ra: null
     n_sersic: 1
@@ -33,15 +33,17 @@ sampling:
     y_cen: [300,3800,'linear']
     random_seed_injection: null
   output_file: "example_dwarf_params.csv"
-  output_directory: ./round_{version}_params/
+  output_directory: ./output/round_{version}/params/
   random_seed_sampling: null
   type: sample
 stamp:
+  annotation: True
+  annotation_scaling: 0.5
   version: 5
-  directory: ./stamps/round_{version}/ # dont forget the trailing slash
+  directory: ./output/round_{version}/stamps/ # dont forget the trailing slash
   size: "full_patch"
   title_format: hsc_stamp_r{version}
   Q: 10
   stretch: 0.5
   minimum: 0
-  n_empty: 20
+  n_empty: 0

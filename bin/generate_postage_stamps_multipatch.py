@@ -1,5 +1,6 @@
 import argparse
 import os
+from glob import glob
 
 import numpy as np
 
@@ -13,7 +14,7 @@ from chrysomallos.utils import Config, logger
 
 def run_single_config(args):
     tract, patch, sampling_seed, config_dict = args
-
+    np.random.seed(sampling_seed)
     # config_dict = "./config/stamps_home_net.yaml"
     config = Config(config_dict)
 
@@ -21,12 +22,16 @@ def run_single_config(args):
     config["pipelines"]["patch"] = patch
     config["sampling"]["generation_id"] = np.random.randint(0, 1000000)
     # sample dwarfs from 1 to 4
-    ndwarfs = np.random.randint(3, 4)
+    ndwarfs = np.random.randint(2, 5)
     config["sampling"]["n_dwarfs"] = ndwarfs
     if config["stamp"]["version"] is not None:
         version = config["stamp"]["version"]
-        config["sampling"]["output_directory"] = f"./round_{version}_params/"
-        config["stamp"]["directory"] = f"./stamps/round_{version}/"
+        config["sampling"]["output_directory"] = config["sampling"][
+            "output_directory"
+        ].format(version=version)
+        config["stamp"]["directory"] = config["stamp"]["directory"].format(
+            version=version
+        )
         config["stamp"]["title_format"] = f"hsc_stamp_r_{version}"
     config["sampling"][
         "output_file"
@@ -42,16 +47,7 @@ def run_single_config(args):
         ingest=False,
         multiproc=False,
     )
-    # import pdb; pdb.set_trace()
-    # from astropy.table import vstack
 
-    # cats= catalogs['g']
-    # clist=[]
-    # for key in cats.keys():
-    #     clist.append(cats[key])
-    # clist=vstack(clist)
-    # clist.to_pandas().to_csv('test_annotation_vals')
-    # import pdb; pdb.set_trace()
     postage_stamp_generator = PostageStampGenerator(
         config=config,
         dwarf_params_frame=dwarf_params_frame,
@@ -59,7 +55,7 @@ def run_single_config(args):
         coadd_dict=coadd_dict,
     )
     postage_stamp_generator.run()
-    # postage_stamp_generator.generate_empty_stamps(config["stamp"]["n_empty"])
+    postage_stamp_generator.generate_empty_stamps(config["stamp"]["n_empty"])
 
 
 def run_configs(stamp_list, multiproc=False):
@@ -68,6 +64,7 @@ def run_configs(stamp_list, multiproc=False):
     if multiproc:
         from multiprocessing import Pool
 
+        multiproc = int(multiproc)
         processes = multiproc if multiproc > 0 else None
         p = Pool(processes, maxtasksperchild=1)
         p.map(run_single_config, gen_args)
@@ -92,11 +89,16 @@ if __name__ == "__main__":
         action="store_true",
         help="write csv of sampled dwarfs",
     )
+    parser.add_argument(
+        "--multiproc",
+        "-mp",
+        default=False,
+        help="use multiprocessing",
+    )
     args = parser.parse_args()
     force_sampling = args.force_sampling
-    patches = [1]  # , 28, 31, 34, 36, 42, 63, 64, 65, 67, 73, 79]
-    tracts = [9615]  # , 9697, 9813]
-    from glob import glob
+    patches = np.arange(81)  # , 28, 31, 34, 36, 42, 63, 64, 65, 67, 73, 79]
+    tracts = [9615, 9697, 9813]
 
     flist = glob(
         "deepCoadd_repo/HSC/runs/RC2/w_2023_32/DM-40356/20230819T003257Z/deepCoadd_calexp/*/*/*/*"
@@ -116,4 +118,4 @@ if __name__ == "__main__":
                     (tract, patch, np.random.randint(0, 1000000), args.config)
                 )
 
-    run_configs(stamp_list, multiproc=False)
+    run_configs(stamp_list, multiproc=args.multiproc)

@@ -7,7 +7,16 @@ import numpy as np
 # def create_annotation()
 
 
-def get_anotation_box(wcs, bbox, x_cen, y_cen, r_scale, theta, ellip, scaling_factor=2):
+def get_anotation_box(wcs, bbox, dwarf_params, scaling_factor=0.5):
+    x_cen = dwarf_params["x_cen"]
+    y_cen = dwarf_params["y_cen"]
+    r_scale = dwarf_params["r_scale"]
+    theta = dwarf_params["theta"]
+    ellip = dwarf_params["ellip"]
+    m_v = dwarf_params["m_v"]
+    sb = dwarf_params["surface_brightness"]
+
+    x_cen, y_cen, r_scale, theta, ellip
     x0 = bbox.beginX
     y0 = bbox.beginY
     x_coord = x_cen + x0
@@ -74,4 +83,10 @@ def get_anotation_box(wcs, bbox, x_cen, y_cen, r_scale, theta, ellip, scaling_fa
         "y_max": int(y_max),
         "x_cen": x_cen,
         "y_cen": y_cen,
+        "r_scale": r_scale,
+        "ellip": ellip,
+        "theta": theta,
+        "m_v": m_v,
+        "sb": sb,
+        "class": "dwarf",  # todo add more classes and put in configuration
     }
