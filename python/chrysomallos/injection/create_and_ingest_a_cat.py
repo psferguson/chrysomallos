@@ -83,7 +83,12 @@ class CreateDwarfInjectionCatalog:
                     self.injection_cats[band].append(
                         massage_the_cat(
                             cat_inp=cat,
-                            mag_limit=self.config["injection"]["mag_limit"],
+                            replace_mag_limit=self.config["injection"][
+                                "replace_mag_limit"
+                            ],
+                            mag_limit_ref_band=self.config["injection"][
+                                "mag_limit_band"
+                            ],
                             band_for_injection=band,
                             wcs=self.coadd_dict[self.first_band]["wcs"],
                             bbox=self.coadd_dict[self.first_band]["bbox"],
@@ -119,7 +124,8 @@ class CreateDwarfInjectionCatalog:
                 for band in self.config["pipelines"]["bands"]:
                     self.injection_cats[band][i] = massage_the_cat(
                         cat_inp=cat,
-                        mag_limit=self.config["injection"]["mag_limit"],
+                        replace_mag_limit=self.config["injection"]["replace_mag_limit"],
+                        mag_limit_ref_band=self.config["injection"]["mag_limit_band"],
                         band_for_injection=band,
                         wcs=self.coadd_dict[band]["wcs"],
                         bbox=self.coadd_dict[band]["bbox"],
@@ -156,6 +162,7 @@ class CreateDwarfInjectionCatalog:
                 r_len * [self.coadd_dict[self.config["pipelines"]["bands"][0]]["wcs"]],
                 r_len * [self.coadd_dict[self.config["pipelines"]["bands"][0]]["bbox"]],
                 r_len * [self.config["injection"]["mag_limit_band"]],
+                r_len * [self.config["injection"]["inject_mag_limit"]],
             )
         )
 
@@ -180,7 +187,7 @@ class CreateDwarfInjectionCatalog:
         args : tuple
             Contains the parameters for the dwarf galaxy.
         """
-        row, wcs, bbox, mag_limit_band = args
+        row, wcs, bbox, mag_limit_band, inject_mag_limit = args
 
         if np.isnan(row["random_seed_injection"]) | (
             row["random_seed_injection"] is None
@@ -201,8 +208,8 @@ class CreateDwarfInjectionCatalog:
             theta=row["theta"],
             n=row["n_sersic"],
             m_v=row["m_v"],
-            mag_limit=36,  # notice this is set to be deeper
-            mag_limit_band=mag_limit_band,
+            inject_mag_limit=inject_mag_limit,  # notice this is set to be deeper
+            inject_mag_limit_band=mag_limit_band,
             random_seed=random_seed,
         )
         return catalog

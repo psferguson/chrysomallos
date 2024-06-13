@@ -30,8 +30,8 @@ def adopt_a_cat(
     theta=0,
     n_sersic=1,
     m_v=None,
-    mag_limit=36.0,
-    mag_limit_band="LSST_g",
+    inject_mag_limit=36.0,
+    inject_mag_limit_band="LSST_g",
     random_seed=None,
     **kwargs,
 ):
@@ -62,9 +62,9 @@ def adopt_a_cat(
     m_v: `float`
         Absolute V-band mag of dwarf to inject. Overrides "stellar_mass" if
         both are given as inputs. If not set, "stellar_mass" is a required input.
-    mag_limit : `float`
+    inject_mag_limit : `float`
         Faintest mag of stars to include
-    mag_limit_band : `str`
+    inject_mag_limit_band : `str`
         Band to apply mag_limit in
     random_seed: `int`
             if not None this sets the random seed to generate catalog with
@@ -104,8 +104,8 @@ def adopt_a_cat(
         imf="kroupa",  # default imf
         xy_dim=xydim,  # half the size of an LSST patch
         pixel_scale=pixel_scale,  # pixel scale of input image
-        mag_limit=mag_limit,
-        mag_limit_band=mag_limit_band,
+        mag_limit=inject_mag_limit,
+        mag_limit_band=inject_mag_limit_band,
         add_remnants=False,  # don't include stellar remnants in the total mass calculation
     )
 
@@ -164,7 +164,8 @@ def adopt_a_cat(
 
 def massage_the_cat(
     cat_inp,
-    mag_limit,
+    replace_mag_limit,
+    mag_limit_ref_band,
     band_for_injection,
     wcs,
     bbox,
@@ -218,14 +219,24 @@ def massage_the_cat(
 
     band = band_for_injection + "_mag"
 
-    mag_for_sersic = totmag_below_maglim(cat_inp[band], mag_limit)
+    mag_limit_ref_band = mag_limit_ref_band.replace("LSST_", "") + "_mag"
+
+    assert (
+        mag_limit_ref_band in cat_inp.colnames
+    ), f"mag_limit_ref_band {mag_limit_ref_band} not in catalog"
+
+    mag_for_sersic = totmag_below_maglim(
+        mags=cat_inp[band],
+        ref_mags=cat_inp[mag_limit_ref_band],
+        ref_maglim=replace_mag_limit,
+    )
     logger.debug(
-        f"massage a cat mag limit {mag_limit}, sersic component {mag_for_sersic: 0.2f} mag"
+        f"massage a cat mag limit {mag_limit_ref_band}, sersic component {mag_for_sersic: 0.2f} mag"
     )
     # Replicate the magnitude column for the band you want to inject into:
     cat_inp["mag"] = cat_inp[band]
 
-    cat = cat_inp[cat_inp["mag"] <= mag_limit]
+    cat = cat_inp[cat_inp[mag_limit_ref_band] <= replace_mag_limit]
 
     # Parameters for simulated dwarf:
     # r_scale = r_scale*u.pc

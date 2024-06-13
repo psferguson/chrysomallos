@@ -1,8 +1,9 @@
 injection:
   dwarfs: null
   ingest: false
-  mag_limit: 10
+  inject_mag_limit: 36
   mag_limit_band: LSST_g
+  replace_mag_limit: 29
   type: stamp
 
 pipelines:
@@ -21,13 +22,13 @@ sampling:
     dist: [2,3,'linear']
     ellip: [0,0.5, 'linear'] # should be 0 - 0.5
     feh: -2.0
-    m_v: [-11,-11,'linear'] # this should go to -11
+    m_v: [-9,-7,'linear']# [-10,-4,'linear'] # this should go to -11
     r_scale: null
     ra: null
     n_sersic: 1
     theta: [0,180,'linear']
     stellar_mass: null
-    surface_brightness: 18 #[24,28,'linear']
+    surface_brightness: [24,28,'linear']
     x_cen: [300,3800,'linear']
     y_cen: [300,3800,'linear']
     random_seed_injection: null
@@ -36,7 +37,7 @@ sampling:
   random_seed_sampling: null
   type: sample
 stamp:
-  version: 4
+  version: 5
   directory: ./stamps/round_{version}/ # dont forget the trailing slash
   size: "full_patch"
   title_format: hsc_stamp_r{version}

@@ -51,8 +51,9 @@ default_dict = {
     },
     "injection": {
         "dwarfs": None,
-        "mag_limit": np.nan,
+        "inject_mag_limit": np.nan,
         "mag_limit_band": None,
+        "replace_mag_limit": np.nan,
         "ingest": False,
         "output_collection": None,
         "type": None,  # either "grid" or "stamp"
