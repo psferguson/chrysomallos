@@ -91,6 +91,8 @@ class CreateDwarfInjectionCatalog:
                             y_cen=self.dwarf_params_frame["y_cen"][i],
                             r_scale=self.dwarf_params_frame["r_scale"][i],
                             dist=self.dwarf_params_frame["dist"][i],
+                            theta=self.dwarf_params_frame["theta"][i],
+                            ellip=self.dwarf_params_frame["ellip"][i],
                         )
                     )
             for band in self.config["pipelines"]["bands"]:
@@ -125,6 +127,8 @@ class CreateDwarfInjectionCatalog:
                         y_cen=self.dwarf_params_frame["y_cen"][i],
                         r_scale=self.dwarf_params_frame["r_scale"][i],
                         dist=self.dwarf_params_frame["dist"][i],
+                        theta=self.dwarf_params_frame["theta"][i],
+                        ellip=self.dwarf_params_frame["ellip"][i],
                     )
         else:
             raise Exception(

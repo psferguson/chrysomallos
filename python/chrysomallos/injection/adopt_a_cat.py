@@ -172,6 +172,8 @@ def massage_the_cat(
     y_cen,
     r_scale=300.0,
     dist=2.0,
+    theta=0.0,
+    ellip=0,
     **kwargs,
 ):
     """Replace the total flux below some mag limit with the
@@ -271,12 +273,14 @@ def massage_the_cat(
     semimajor_all[-1] = radius
     sersic_n_all = 0.0 * cat["mag"] + 1.0
     sersic_n_all[-1] = 1.0
-    pa_all = 0.0 * cat["mag"]
+    pa_all = 0 * cat["mag"]
+    pa_all[-1] = theta
     axis_ratio_all = np.ones(len(cat["mag"]))
+    axis_ratio_all[-1] = 1.0 - ellip
 
     cat.add_columns(
         [semimajor_all, sersic_n_all, pa_all, axis_ratio_all],
-        names=["half_light_radius", "n_sersic", "pa", "axis_ratio"],
+        names=["half_light_radius", "n_sersic", "beta", "q"],
     )
 
     return cat
