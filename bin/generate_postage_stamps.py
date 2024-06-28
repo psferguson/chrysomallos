@@ -33,6 +33,15 @@ if __name__ == "__main__":
         config_dict = args.config
 
     config = Config(config_dict)
+    if config["stamp"]["version"] is not None:
+        version = config["stamp"]["version"]
+        config["sampling"]["output_directory"] = config["sampling"][
+            "output_directory"
+        ].format(version=version)
+        config["stamp"]["directory"] = config["stamp"]["directory"].format(
+            version=version
+        )
+        config["stamp"]["title_format"] = f"hsc_stamp_r_{version}"
     if os.path.exists(config["sampling"]["output_file"]) & ~force_sampling:
         logger.info("reading dwarf parameters from file")
         dwarf_params_frame = read_data_file(config["sampling"]["output_file"])

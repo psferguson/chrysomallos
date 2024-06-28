@@ -10,7 +10,7 @@ from astropy.visualization import make_lupton_rgb
 from tqdm import tqdm
 
 from chrysomallos.utils import logger
-from chrysomallos.utils.annotations import get_anotation_box
+from chrysomallos.utils.annotations import compute_central_density, get_anotation_box
 
 __all__ = [
     "PostageStampGenerator",
@@ -203,12 +203,23 @@ class PostageStampGenerator:
             wcs = self.coadd_dict[first_band]["wcs"]
             bbox = self.coadd_dict[first_band]["bbox"]
             for i in range(self.config["sampling"]["n_dwarfs"]):
+                box_side_len = 20 / 3600  # size in deg
+                central_density = compute_central_density(
+                    self.dwarf_catalogs[first_band][i],
+                    wcs,
+                    bbox,
+                    self.dwarf_params_frame["x_cen"][i],
+                    self.dwarf_params_frame["y_cen"][i],
+                    box_side_len=box_side_len,
+                )
+
                 annotation_list.append(
                     get_anotation_box(
                         wcs=wcs,
                         bbox=bbox,
                         dwarf_params=self.dwarf_params_frame.iloc[i],
                         scaling_factor=self.config["stamp"]["annotation_scaling"],
+                        central_density=central_density,
                     )
                 )
 
@@ -341,7 +352,7 @@ class PostageStampGenerator:
         # rgb=np.rot90(rgb)
         # xmax, ymax = rgb.shape[:2]
         # ax.imshow(rgb, origin="lower", extent=[0, xmax, 0, ymax])
-        # import pdb; pdb.set_trace()
+        #
         # ax.axis('off')
         # plt.tight_layout()
         # plt.savefig(title, dpi=100, pad_inches=0.0)

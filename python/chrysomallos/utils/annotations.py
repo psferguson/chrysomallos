@@ -7,7 +7,9 @@ import numpy as np
 # def create_annotation()
 
 
-def get_anotation_box(wcs, bbox, dwarf_params, scaling_factor=0.5):
+def get_anotation_box(
+    wcs, bbox, dwarf_params, scaling_factor=0.5, central_density=None
+):
     x_cen = dwarf_params["x_cen"]
     y_cen = dwarf_params["y_cen"]
     r_scale = dwarf_params["r_scale"]
@@ -16,7 +18,6 @@ def get_anotation_box(wcs, bbox, dwarf_params, scaling_factor=0.5):
     m_v = dwarf_params["m_v"]
     sb = dwarf_params["surface_brightness"]
 
-    x_cen, y_cen, r_scale, theta, ellip
     x0 = bbox.beginX
     y0 = bbox.beginY
     x_coord = x_cen + x0
@@ -88,5 +89,40 @@ def get_anotation_box(wcs, bbox, dwarf_params, scaling_factor=0.5):
         "theta": theta,
         "m_v": m_v,
         "sb": sb,
+        "central_density": central_density,
         "class": "dwarf",  # todo add more classes and put in configuration
     }
+
+
+def compute_central_density(catalog, wcs, bbox, x_cen, y_cen, box_side_len=10):
+    """
+    Computes the central density of a catalog of sources.
+
+    Parameters:
+    - catalog: Catalog of sources to analyze.
+
+    Returns:
+    - Central density of the catalog.
+    """
+    x0 = bbox.beginX
+    y0 = bbox.beginY
+    x_coord = x_cen + x0
+    y_coord = y_cen + y0
+    ra_cen, dec_cen = wcs.pixelToSky(x_coord, y_coord)
+
+    delta_dec = box_side_len / 2  # box size should be deg and is side len
+    dec_max = dec_cen.asDegrees() + delta_dec
+    dec_min = dec_cen.asDegrees() - delta_dec
+
+    cos_dec = np.cos(dec_cen.asRadians())
+    delta_ra = box_side_len / 2 / cos_dec
+    ra_max = ra_cen.asDegrees() + delta_ra
+    ra_min = ra_cen.asDegrees() - delta_ra
+
+    area = box_side_len**2  # units are deg^2
+
+    sel = (catalog["ra"] > ra_min) & (catalog["ra"] < ra_max)
+    sel &= (catalog["dec"] > dec_min) & (catalog["dec"] < dec_max)
+    n_obj = sel.sum()
+
+    return n_obj / area  # units are sources/deg^-2

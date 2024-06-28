@@ -79,6 +79,7 @@ class DwarfParamSampler:
         """
 
         sampling_config = self.config["sampling"]
+        grid_bool = False
         if sampling_config["random_seed_sampling"] is not None:
             np.random.seed(sampling_config["random_seed_sampling"])
 
@@ -99,13 +100,28 @@ class DwarfParamSampler:
                 elif (param in PARAMS_NOT_SAMPLED) & (param_val is not None):
                     logger.info(f"sampling for param: {param} not yet implemented")
                     output_dict[param] = np.ones(n_dwarfs) * np.nan
-                # for any other parameter raise exception if is None or nan
+                    # for any other parameter raise exception if is None or nan
                 elif (param_val is None) & (param not in PARAMS_NOT_SAMPLED):
                     raise Exception(
                         f"param {param} is None or nan and cannot be sampled"
                     )
+                elif param in ["x_cen", "y_cen"]:
+                    if param_val[-1] == "grid":
+                        grid_bool = True
+                    else:
+                        output_dict[param] = self.sample(param_val, n_dwarfs)
                 else:
                     output_dict[param] = self.sample(param_val, n_dwarfs)
+        if grid_bool:
+            param_x_cen = sampling_config["params"]["x_cen"]
+            param_y_cen = sampling_config["params"]["y_cen"]
+            assert (param_x_cen[-1] == "grid") & (
+                param_y_cen[-1] == "grid"
+            ), "x/y_cen must be grid"
+            param_val = param_x_cen[:-1] + param_y_cen[:-1] + ["grid"]
+            grid_points = self.sample(param_val, n_dwarfs)
+            output_dict["x_cen"] = grid_points[:, 0]
+            output_dict["y_cen"] = grid_points[:, 1]
 
         self.dwarf_param_frame = pd.DataFrame(output_dict)
         self.dwarf_param_frame[calc_param] = self._fill_mv_sb_r_scale(
@@ -153,11 +169,19 @@ class DwarfParamSampler:
         Returns:
         - An array of sampled values.
         """
-        if isinstance(param, float) | isinstance(param, int):
+        if isinstance(param, (float, int)):
             data = np.ones(n_dwarfs) * param
         elif isinstance(param, list):
             if param[-1] == "linear":
                 data = self.linear(param[0], param[1], n_dwarfs)
+            if param[-1] == "loglinear":
+                data = self.loglinear(param[0], param[1], n_dwarfs)
+            elif param[-1] == "grid":
+                data = self.grid(param[0], param[1], param[2], param[3], n_dwarfs)
+            elif all(isinstance(item, (float, int)) for item in param):
+                data = np.zeros(n_dwarfs)
+                for i in range(n_dwarfs):
+                    data[i] = param[i % len(param)]
         elif param is None:
             data = np.ones(n_dwarfs) * np.nan
         else:
@@ -180,6 +204,62 @@ class DwarfParamSampler:
         if max_val <= min_val:
             raise Exception(f"Max ({max_val}) must be greater than Min ({min_val})")
         return np.random.uniform(min_val, max_val, size)
+
+    def loglinear(self, min_val, max_val, size):
+        """
+        Generates linearly spaced samples between a minimum and maximum value.
+
+        Parameters:
+        - min_val: The minimum value in the range.
+        - max_val: The maximum value in the range.
+        - size: The number of samples to generate.
+
+        Returns:
+        - An array of linearly spaced samples.
+        """
+        if max_val <= min_val:
+            raise Exception(f"Max ({max_val}) must be greater than Min ({min_val})")
+        return 10 ** np.random.uniform(min_val, max_val, size)
+
+    def grid(self, min_x, max_x, min_y, max_y, size):
+        """
+        Given number of points, generate a linear grid spanning x and y ranges.
+
+        Parameters:
+        min_x (float): Minimum x-coordinate.
+        max_x (float): Maximum x-coordinate.
+        min_y (float): Minimum y-coordinate.
+        max_y (float): Maximum y-coordinate.
+        size (int): Total number of points.
+
+        Returns:
+        np.ndarray: Array of shape (size, 2) containing the grid points.
+        """
+        assert size > 0, "size must be greater than 0"
+        assert min_x < max_x, "min_x must be less than max_x"
+        assert min_y < max_y, "min_y must be less than max_y"
+
+        # Calculate the number of rows and columns
+        n_rows = int(np.sqrt(size))
+        n_cols = size // n_rows
+        if n_rows * n_cols < size:
+            n_cols += 1
+
+        # Generate linearly spaced values within the given range for x and y
+        x = np.linspace(min_x, max_x, n_cols)
+        y = np.linspace(min_y, max_y, n_rows)
+
+        # Create a meshgrid from these values
+        xx, yy = np.meshgrid(x, y)
+
+        # Combine the x and y coordinates into a single array of shape (n_rows*n_cols, 2)
+        grid_points = np.c_[xx.ravel(), yy.ravel()]
+
+        # If there are more points than needed, trim the excess
+        if len(grid_points) > size:
+            grid_points = grid_points[:size]
+
+        return grid_points
 
     def write_param_file(self):
         """
@@ -212,7 +292,7 @@ class DwarfParamSampler:
         if calc_param == "m_v":
             vals = sb_rh_to_mv(
                 sb=df["surface_brightness"],
-                rh=df["surface_scale"],
+                rh=df["r_scale"],
                 dist=df["dist"],
             )
         elif calc_param == "r_scale":
@@ -220,7 +300,7 @@ class DwarfParamSampler:
                 sb=df["surface_brightness"], M_v=df["m_v"], dist=df["dist"]
             )
         elif calc_param == "surface_brightness":
-            vals = rh_mv_to_sb(M_v=df["m_v"], rh=df["surface_scale"], dist=df["dist"])
+            vals = rh_mv_to_sb(M_v=df["m_v"], rh=df["r_scale"], dist=df["dist"])
         else:
             raise Exception(f"unknown calc param: {calc_param}")
         return vals
