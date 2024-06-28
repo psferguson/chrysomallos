@@ -105,17 +105,18 @@ if __name__ == "__main__":
     )
     directory = "deepCoadd_repo/HSC/runs/RC2/w_2023_32/DM-40356/20230819T003257Z/deepCoadd_calexp/"
     stamp_list = []
-    for tract in tracts:
-        for patch in patches:
-            band_count = 0
-            for band in ["g", "r", "i"]:
-                if os.path.exists(
-                    directory + "/" + str(tract) + "/" + str(patch) + "/" + band
-                ):
-                    band_count += 1
-            if band_count == 3:
-                stamp_list.append(
-                    (tract, patch, np.random.randint(0, 1000000), args.config)
-                )
+    for iteration in range(7):
+        for tract in tracts:
+            for patch in patches:
+                band_count = 0
+                for band in ["g", "r", "i"]:
+                    if os.path.exists(
+                        directory + "/" + str(tract) + "/" + str(patch) + "/" + band
+                    ):
+                        band_count += 1
+                if band_count == 3:
+                    stamp_list.append(
+                        (tract, patch, np.random.randint(0, 1000000), args.config)
+                    )
 
     run_configs(stamp_list, multiproc=args.multiproc)

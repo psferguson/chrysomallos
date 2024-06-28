@@ -31,13 +31,14 @@ sampling:
     y_cen: [300,3800,'linear']
     random_seed_injection: null
   output_file: "example_dwarf_params.csv"
-  output_directory: ./round_3_params/
+  output_directory: ./round_{version}_params/
   random_seed_sampling: null
   type: sample
 stamp:
-  directory: ./stamps/round_3/ # dont forget the trailing slash
+  version: 4
+  directory: ./stamps/round_{version}/ # dont forget the trailing slash
   size: [600,600]
-  title_format: hsc_stamp_r3
+  title_format: hsc_stamp_r{version}
   Q: 10
   stretch: 0.5
   minimum: 0
