@@ -3,13 +3,28 @@ import os
 from glob import glob
 
 import numpy as np
+from tqdm import tqdm
 
 from chrysomallos.injection import (
     CreateDwarfInjectionCatalog,
     DwarfParamSampler,
     PostageStampGenerator,
 )
-from chrysomallos.utils import Config, logger
+from chrysomallos.utils import Config
+from chrysomallos.utils.annotations import get_anotation_box
+
+
+def gal_size(r_scale, dwarf_params_frame, wcs, bbox):
+    row = dwarf_params_frame.iloc[0].copy()
+    row["r_scale"] = r_scale
+    result = get_anotation_box(
+        wcs=wcs, bbox=bbox, dwarf_params=row, scaling_factor=0.5, central_density=1
+    )
+    return (
+        np.log10(r_scale),
+        result["x_max"] - result["x_min"],
+        result["y_max"] - result["y_min"],
+    )
 
 
 def run_single_config(args):
@@ -21,8 +36,8 @@ def run_single_config(args):
     config["pipelines"]["tract"] = tract
     config["pipelines"]["patch"] = patch
     config["sampling"]["generation_id"] = np.random.randint(0, 1000000)
-    # sample dwarfs from 1 to 4
-    ndwarfs = np.random.randint(2, 5)
+    # sample dwarfs from 1 to 3
+    ndwarfs = np.random.randint(1, 4)
     config["sampling"]["n_dwarfs"] = ndwarfs
     if config["stamp"]["version"] is not None:
         version = config["stamp"]["version"]
@@ -37,25 +52,33 @@ def run_single_config(args):
         "output_file"
     ] = f"round_{version}_tract_{tract}_patch_{patch}_{config['sampling']['generation_id']}.csv"
     config["sampling"]["random_seed_sampling"] = sampling_seed
+    if ndwarfs == 0:
+        postage_stamp_generator = PostageStampGenerator(
+            config=config,
+            dwarf_params_frame=None,
+            dwarf_catalogs=None,
+            coadd_dict=None,
+        )
+        postage_stamp_generator.generate_empty_stamps(1)
+    else:
+        sampler = DwarfParamSampler(config)
+        # logger.info(f"generating params for {config['sampling']['n_dwarfs']} dwarfs")
+        dwarf_params_frame, coadd_dict = sampler.run(write=True)
 
-    sampler = DwarfParamSampler(config)
-    logger.info(f"generating params for {config['sampling']['n_dwarfs']} dwarfs")
-    dwarf_params_frame, coadd_dict = sampler.run(write=True)
+        creator = CreateDwarfInjectionCatalog(config, dwarf_params_frame)
+        catalogs, coadd_dict = creator.run(
+            ingest=False,
+            multiproc=False,
+        )
 
-    creator = CreateDwarfInjectionCatalog(config, dwarf_params_frame)
-    catalogs, coadd_dict = creator.run(
-        ingest=False,
-        multiproc=False,
-    )
-
-    postage_stamp_generator = PostageStampGenerator(
-        config=config,
-        dwarf_params_frame=dwarf_params_frame,
-        dwarf_catalogs=catalogs,
-        coadd_dict=coadd_dict,
-    )
-    postage_stamp_generator.run()
-    postage_stamp_generator.generate_empty_stamps(config["stamp"]["n_empty"])
+        postage_stamp_generator = PostageStampGenerator(
+            config=config,
+            dwarf_params_frame=dwarf_params_frame,
+            dwarf_catalogs=catalogs,
+            coadd_dict=coadd_dict,
+        )
+        postage_stamp_generator.run()
+        # postage_stamp_generator.generate_empty_stamps_full_patch(1, np.random.randint(0, 1000000))
 
 
 def run_configs(stamp_list, multiproc=False):
@@ -66,8 +89,11 @@ def run_configs(stamp_list, multiproc=False):
 
         multiproc = int(multiproc)
         processes = multiproc if multiproc > 0 else None
-        p = Pool(processes, maxtasksperchild=1)
-        p.map(run_single_config, gen_args)
+        with Pool(processes, maxtasksperchild=1) as p:
+            for _ in tqdm(
+                p.imap_unordered(run_single_config, gen_args), total=len(gen_args)
+            ):
+                pass
     else:
         [run_single_config(args) for args in gen_args]
 
@@ -95,6 +121,12 @@ if __name__ == "__main__":
         default=False,
         help="use multiprocessing",
     )
+    parser.add_argument(
+        "--stamps",
+        "-s",
+        default=10_000,
+        help="n stamps",
+    )
     args = parser.parse_args()
     force_sampling = args.force_sampling
     patches = np.arange(81)  # , 28, 31, 34, 36, 42, 63, 64, 65, 67, 73, 79]
@@ -105,6 +137,8 @@ if __name__ == "__main__":
     )
     directory = "deepCoadd_repo/HSC/runs/RC2/w_2023_32/DM-40356/20230819T003257Z/deepCoadd_calexp/"
     stamp_list = []
+    total_stamps = int(args.stamps)
+
     for tract in tracts:
         for patch in patches:
             band_count = 0
@@ -117,5 +151,19 @@ if __name__ == "__main__":
                 stamp_list.append(
                     (tract, patch, np.random.randint(0, 1000000), args.config)
                 )
+        print(f"{tract=}, n_patch = {len(stamp_list)}")
 
-    run_configs(stamp_list, multiproc=args.multiproc)
+    n_iterations = total_stamps // len(stamp_list)
+    if total_stamps % len(stamp_list) != 0:
+        n_iterations += 1
+
+    print(f"{n_iterations=}")
+
+    modified_stamp_list = []
+    for iteration in range(n_iterations):
+        modified_stamp_list = modified_stamp_list + [
+            (tract, patch, np.random.randint(0, 1000000), config)
+            for (tract, patch, __, config) in stamp_list
+        ]
+
+    run_configs(modified_stamp_list, multiproc=args.multiproc)

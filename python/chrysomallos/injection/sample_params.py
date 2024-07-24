@@ -88,7 +88,7 @@ class DwarfParamSampler:
 
         elif sampling_config["type"] == "sample":
             n_dwarfs = sampling_config["n_dwarfs"]
-            logger.info(f"sampling {n_dwarfs} dwarfs")
+            # logger.info(f"sampling {n_dwarfs} dwarfs")
             output_dict = {key: [] for key in sampling_config["params"]}
             for param in output_dict.keys():
                 param_val = sampling_config["params"][param]
@@ -150,7 +150,7 @@ class DwarfParamSampler:
         )
         self.dwarf_param_frame = self.dwarf_param_frame[OUT_ORDER]
         if write:
-            logger.info("saving generated params")
+            # logger.info("saving generated params")
             self.write_param_file()
         return self.dwarf_param_frame, self.coadd_dict
 
