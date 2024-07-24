@@ -71,7 +71,7 @@ class CreateDwarfInjectionCatalog:
 
         self.generate_catalogs(multiproc=multiproc)
 
-        # logger.info(f"generated catalogs for {len(self.dwarf_params_frame)} dwarfs")
+        logger.debug(f"generated catalogs for {len(self.dwarf_params_frame)} dwarfs")
 
         if self.config["injection"]["type"] == "grid":
             # convert to ssi format and concatenate to single catalog per band
