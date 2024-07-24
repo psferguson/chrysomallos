@@ -19,11 +19,11 @@ sampling:
   params:
     age: 10
     dec: null
-    dist: [3.4,3.6,'linear']
+    dist: [9.8,10.2,'linear']
     ellip: [0,0.5, 'linear'] # should be 0 - 0.5
     feh: -2.0
-    m_v: [-10,-4,'linear'] # this should go to -11
-    r_scale: [1,3,'loglinear']
+    m_v: [-13,-7,'linear'] # this should go to -11
+    r_scale: [1.25,3,'loglinear']
     ra: null
     n_sersic: 1
     theta: [0,180,'linear']
@@ -39,7 +39,7 @@ sampling:
 stamp:
   annotation: True
   annotation_scaling: 0.5
-  version: 7
+  version: 9
   directory: ./output/round_{version}/stamps/ # dont forget the trailing slash
   size: "full_patch"
   title_format: hsc_stamp_r{version}

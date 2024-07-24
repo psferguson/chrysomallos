@@ -228,7 +228,8 @@ class PostageStampGenerator:
             ).reset_index(drop=True)
             annotation_frame.to_csv(title.replace(".png", ".csv"))
 
-        for band in tqdm(self.config["pipelines"]["bands"]):
+        for band in self.config["pipelines"]["bands"]:
+            # for band in tqdm(self.config["pipelines"]["bands"]):
             image = self.coadd_dict[band]["image"]
             input_exposure = image.clone()
             psf = self.coadd_dict[band]["psf"]
@@ -262,8 +263,6 @@ class PostageStampGenerator:
 
                 injection_catalogs.append(injection_catalog)
 
-            logger.info(f"creating {title}, {band}-band with {cat_length} sources.")
-
             inject_output = inject_task.run(
                 injection_catalogs=injection_catalogs,
                 input_exposure=input_exposure,
@@ -294,8 +293,9 @@ class PostageStampGenerator:
             ax=ax,
         )
         end_time = time.time()
+
         logger.info(
-            f"Time to create stamp with {cat_length} sources: {end_time - start_time: 0.2f} seconds"
+            f"Time to create {title} with {cat_length} sources: {end_time - start_time: 0.2f} seconds"
         )
 
     def crop_injection_catalog(
@@ -523,3 +523,74 @@ class PostageStampGenerator:
                 bands=self.config["pipelines"]["bands"],
                 ax=ax,
             )
+
+    def generate_empty_stamps_full_patch(self, n_stamps, gen_id):
+        """
+        Generates a specified number of empty postage stamps.
+
+        Parameters:
+        - n_stamps: Number of empty stamps to generate.
+        """
+        if n_stamps == 0:
+            return
+        # setup injection task
+        inject_config = si.CoaddInjectConfig()
+        inject_task = si.CoaddInjectTask(config=inject_config)
+
+        first_band = self.config["pipelines"]["bands"][0]
+
+        stamp_x_size = (
+            self.coadd_dict[first_band]["bbox"].maxX
+            - self.coadd_dict[first_band]["bbox"].minX
+        )
+        stamp_y_size = (
+            self.coadd_dict[first_band]["bbox"].maxY
+            - self.coadd_dict[first_band]["bbox"].minY
+        )
+
+        fig, ax = self.create_axes_for_stamps(
+            stamp_x_size=stamp_x_size, stamp_y_size=stamp_y_size, dpi=100
+        )
+
+        # make title of stamp
+        title = self.make_full_patch_title(
+            stamp_directory=self.config["stamp"]["directory"],
+            stamp_title_prefix=self.config["stamp"]["title_format"],
+            tract=self.config["pipelines"]["tract"],
+            patch=self.config["pipelines"]["patch"],
+            ndwarf=0,
+            bands=self.config["pipelines"]["bands"],
+            generation_id=gen_id,
+        )
+        injection_dict = {}
+        start_time = time.time()
+        for band in self.config["pipelines"]["bands"]:
+            # for band in tqdm(self.config["pipelines"]["bands"]):
+            image = self.coadd_dict[band]["image"]
+            input_exposure = image.clone()
+            bbox = self.coadd_dict[band]["bbox"]
+
+            stamp_range = [
+                bbox.beginX,
+                bbox.endX,
+                bbox.beginY,
+                bbox.endY,
+            ]
+            injection_dict[band] = input_exposure.image[
+                stamp_range[0] : stamp_range[1], stamp_range[2] : stamp_range[3]
+            ].array
+
+        self.make_one_stamp_png(
+            injection_dict=injection_dict,
+            title=title,
+            Q=self.config["stamp"]["Q"],
+            stretch=self.config["stamp"]["stretch"],
+            minimum=self.config["stamp"]["minimum"],
+            bands=self.config["pipelines"]["bands"],
+            ax=ax,
+        )
+        end_time = time.time()
+        cat_length = 0
+        logger.info(
+            f"Time to create {title} with {cat_length} sources: {end_time - start_time: 0.2f} seconds"
+        )
