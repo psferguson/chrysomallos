@@ -12,14 +12,16 @@ from tqdm import tqdm
 from chrysomallos.utils import logger
 from chrysomallos.utils.annotations import compute_central_density, get_anotation_box
 
+from .inject import InjectionGenerator
+
 __all__ = [
     "PostageStampGenerator",
 ]
 
 
-class PostageStampGenerator:
+class PostageStampGenerator(InjectionGenerator):
     """
-    injectes dwarf galaxies into images and generates postage stamps of.
+    injects dwarf galaxies into images and generates postage stamps of.
     """
 
     def __init__(self, config, dwarf_params_frame, dwarf_catalogs, coadd_dict) -> None:

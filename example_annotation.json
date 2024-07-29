@@ -1,0 +1,72 @@
+{
+    "info": {
+        "year": "2024",
+        "version": "5",
+        "description": "annotations of ssi dwarfs in hsc",
+        "contributor": "peter ferguson",
+        "url": "",
+        "date_created": "2024-06-27"
+    },
+    "licenses": [
+        {
+            "id": 1,
+            "url": "https://creativecommons.org/licenses/by/4.0/",
+            "name": "CC BY 4.0"
+        }
+    ],
+    "categories": [
+        {
+            "id": 0,
+            "name": "galaxy",
+            "supercategory": "none"
+        },
+        {
+            "id": 1,
+            "name": "dwarf",
+            "supercategory": "galaxy"
+        }
+    ],
+    "images": [
+        {
+            "id": 0,
+            "license": 1,
+            "file_name": "hsc_stamp_r_5_9615_0_ndwarf_4_gri_829345.png",
+            "height": 4200,
+            "width": 4100
+        }
+    ],
+    "annotations": [
+        {
+            "id": 0,
+            "image_id": 0,
+            "category_id": 1,
+            "bbox": [
+                0,
+                752,
+                176,
+                243
+            ],
+            "area": 42768,
+            "segmentation": [],
+            "iscrowd": 0,
+            "r_scale": 200.0,
+            "m_v": -7.0
+        },
+        {
+            "id": 1,
+            "image_id": 0,
+            "category_id": 1,
+            "bbox": [
+                126,
+                738,
+                431,
+                184
+            ],
+            "area": 79304,
+            "segmentation": [],
+            "iscrowd": 0,
+            "r_scale": 200.0,
+            "m_v": -7.0
+        }
+    ]
+}

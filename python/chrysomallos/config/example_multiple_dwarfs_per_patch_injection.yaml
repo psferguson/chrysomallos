@@ -1,0 +1,50 @@
+injection:
+  dwarfs: null
+  ingest: True
+  inject_mag_limit: 36
+  mag_limit_band: LSST_g
+  replace_mag_limit: 29
+  type: stamp
+  output_collection: 'u/pferguso/test'
+
+pipelines:
+  bands: ['g','r','i']
+  input_collections: ['HSC/runs/RC2/w_2023_32/DM-40356/20230819T003257Z']
+  patch: None
+  repo: ./deepCoadd_repo
+  skymap: hsc_rings_v1
+  tract: None
+sampling:
+  generation_id: null
+  n_dwarfs: [2,5] # used with np.random.randint
+  params:
+    age: 10
+    dec: null
+    dist: [9.8,10.2,'linear']
+    ellip: [0,0.5, 'linear'] # should be 0 - 0.5
+    feh: -2.0
+    m_v: [-13,-7,'linear'] # this should go to -11
+    r_scale: [1.25,3,'loglinear']
+    ra: null
+    n_sersic: 1
+    theta: [0,180,'linear']
+    stellar_mass: null
+    surface_brightness: null
+    x_cen: [300,3800,'linear']
+    y_cen: [300,3800,'linear']
+    random_seed_injection: null
+  output_file: "grid_dwarf_params.csv"
+  output_directory: ./output/round_{version}/params/
+  random_seed_sampling: null
+  type: sample
+stamp:
+  annotation: True
+  annotation_scaling: 0.5
+  version: 1
+  directory: None # dont forget the trailing slash
+  size: "full_patch"
+  title_format: None
+  Q: 10
+  stretch: 0.5
+  minimum: 0
+  n_empty: 0
