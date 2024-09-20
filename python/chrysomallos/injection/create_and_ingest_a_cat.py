@@ -1,4 +1,5 @@
 import astropy.table as atable
+import datetime
 import lsst.source.injection as si
 import numpy as np
 from lsst.daf.butler import Butler, CollectionType
@@ -100,12 +101,17 @@ class CreateDwarfInjectionCatalog:
                             ellip=self.dwarf_params_frame["ellip"][i],
                         )
                     )
+            inject_cat_collection = np.unique(self.dwarf_params_frame["inject_cat_collection"])
+            # Make sure that there's only a single collection in the input CSV
+            # (should add an error message!)
+            assert len(inject_cat_collection) == 1
+            inject_cat_collection = inject_cat_collection[0]
             for band in self.config["pipelines"]["bands"]:
                 self.injection_cats[band] = atable.vstack(self.injection_cats[band])
             if ingest:
                 print('inside ingest loop')
                 self.ingest_injection_catalogs(
-                    si_input_collection=self.config['injection']['inject_cat_collection'],
+                    si_input_collection=inject_cat_collection,
                     catalogs=self.injection_cats,
                     bands=self.config["pipelines"]["bands"],
                 )
@@ -229,18 +235,10 @@ class CreateDwarfInjectionCatalog:
             The bands to ingest catalogs for.
         """
         writeable_butler = Butler(self.config['pipelines']['repo'], writeable=True)
-        import pdb; pdb.set_trace()
-        try:
-            writeable_butler.registry.queryCollections(si_input_collection)
-            # writeable_butler.removeRuns([si_input_collection])
-        except MissingCollectionError:
-            logger.info("Writing into a new RUN collection")
-            _ = writeable_butler.registry.registerCollection(
-                si_input_collection, type=CollectionType.RUN
-               )
-            pass
-        else:
-            logger.info("Prior RUN collection located and successfully removed")
+        logger.info(f"Writing into a new RUN collection {si_input_collection}")
+        _ = writeable_butler.registry.registerCollection(
+            si_input_collection, type=CollectionType.RUN
+            )
 
         self.injection_cat_refs = {}
         for band in bands:

@@ -46,7 +46,7 @@ default_dict = {
             "dec": None,
             "random_seed_injection": None,
         },
-        "output_file": None,
+        "output_file_base": None,
         "output_directory": "./",
     },
     "injection": {
@@ -55,7 +55,7 @@ default_dict = {
         "mag_limit_band": None,
         "replace_mag_limit": np.nan,
         "ingest": False,
-        "inject_cat_collection": None,
+        "inject_cat_collection_base": None,
         "type": None,  # either "grid" or "stamp"
     },
     "stamp": {

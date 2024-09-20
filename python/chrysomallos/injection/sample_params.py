@@ -3,6 +3,7 @@ import os
 import fitsio
 import numpy as np
 import pandas as pd
+import uuid
 
 from chrysomallos.utils import (
     get_coadd_dict,
@@ -38,6 +39,7 @@ OUT_ORDER = [
     "n",
     "random_seed_injection",
     "dwarf_generation_id",
+    "inject_cat_collection"
 ]
 
 PARAMS_NOT_SAMPLED = [
@@ -78,6 +80,10 @@ class DwarfParamSampler:
         - DataFrame containing sampled parameters for dwarf galaxies.
         """
 
+        if self.config['injection']['ingest']:
+            write=True
+            logger.info('Setting write to TRUE because ingest=True')
+            
         sampling_config = self.config["sampling"]
         grid_bool = False
         if sampling_config["random_seed_sampling"] is not None:
@@ -130,9 +136,15 @@ class DwarfParamSampler:
         self.dwarf_param_frame["tract"] = self.config["pipelines"]["tract"]
         self.dwarf_param_frame["patch"] = self.config["pipelines"]["patch"]
         self.dwarf_param_frame["id"] = self.dwarf_param_frame.index
-        self.dwarf_param_frame["dwarf_generation_id"] = self.config["sampling"][
-            "generation_id"
-        ]
+#         self.dwarf_param_frame["dwarf_generation_id"] = self.config["sampling"][
+#             "generation_id"
+#         ]
+        uuid_str = str(uuid.uuid4())
+        self.dwarf_param_frame["dwarf_generation_id"] = uuid_str
+        # import pdb; pdb.set_trace()
+        self.dwarf_param_frame["inject_cat_collection"] = self.config["injection"][
+            "inject_cat_collection_base"
+        ]+'/'+uuid_str
         # get mstar_from_absmag populate mstar
         self.dwarf_param_frame["stellar_mass"] = mstar_from_absmag(
             self.dwarf_param_frame["m_v"]
@@ -151,7 +163,7 @@ class DwarfParamSampler:
         self.dwarf_param_frame = self.dwarf_param_frame[OUT_ORDER]
         if write:
             # logger.info("saving generated params")
-            self.write_param_file()
+            self.write_param_file(uuid_str)
         return self.dwarf_param_frame, self.coadd_dict
 
     def sample(self, param, n_dwarfs):
@@ -261,14 +273,19 @@ class DwarfParamSampler:
 
         return grid_points
 
-    def write_param_file(self):
+    def write_param_file(self, uuid_str):
         """
         Writes the sampled parameters to a file specified in the configuration.
         Supports CSV and FITS file formats.
         """
         directory = self.config["sampling"]["output_directory"]
-        filename = directory + self.config["sampling"]["output_file"]
-        ext = os.path.splitext(filename)[1]
+        filename_base = directory + self.config["sampling"]["output_file_base"]
+        ext = os.path.splitext(filename_base)[1]
+        # If the extension isn't provided, make it CSV
+        if len(ext) < 1:
+            ext = ".csv"
+        filename = os.path.splitext(filename_base)[0]+'_'+uuid_str+ext
+
         if ext == ".csv":
             self.dwarf_param_frame.to_csv(filename, index=False)
         elif ext == ".fits":
@@ -276,6 +293,8 @@ class DwarfParamSampler:
             fitsio.write(filename, rec_arr, clobber=True)
         else:
             raise Exception(f"bad filetype {ext}")
+        logger.info(f"Saved generated params to {filename}")
+
         return 2
 
     def _fill_mv_sb_r_scale(self, calc_param, df):

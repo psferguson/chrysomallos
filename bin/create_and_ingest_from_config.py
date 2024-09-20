@@ -15,7 +15,12 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="Description of your script/functionality."
     )
-    parser.add_argument("filename", help="name of config.yaml file")
+    parser.add_argument(
+        "--config",
+        "-c",
+        help="Path to the config.yaml file. Defaults to an example configuration if not specified.",
+        default=None,
+    )
     parser.add_argument(
         "-ingest",
         "--i",
@@ -35,7 +40,7 @@ if __name__ == "__main__":
     ingest_bool = args.i
     force_sampling = args.force_sampling
 
-    with open(args.filename, "r") as file:
+    with open(args.config, "r") as file:
         user_config_dict = yaml.safe_load(file)
         for key, value in user_config_dict.items():
             config[key] = value
@@ -46,14 +51,13 @@ if __name__ == "__main__":
     # print('Running get_coadd_dict')
     # get_coadd_dict(None, config)
     # print('Finished running get_coadd_dict')
-    if os.path.exists(config["sampling"]["output_file"]) & ~force_sampling:
+    if os.path.exists(config["sampling"]["output_file_base"]) & ~force_sampling:
         logger.info("reading dwarf parameters from file")
-        dwarf_params_frame = read_data_file(config["sampling"]["output_file"])
+        dwarf_params_frame = read_data_file(config["sampling"]["output_file_base"])
         logger.info(f"parameters for {len(dwarf_params_frame)} dwarfs")
         coadd_dict = None
     else:
         sampler = DwarfParamSampler(config)
-        # print('Jesus was way cool')
         logger.info(f"generating params for {config['sampling']['n_dwarfs']} dwarfs")
         dwarf_params_frame, coadd_dict = sampler.run()
 
