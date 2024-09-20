@@ -103,8 +103,9 @@ class CreateDwarfInjectionCatalog:
             for band in self.config["pipelines"]["bands"]:
                 self.injection_cats[band] = atable.vstack(self.injection_cats[band])
             if ingest:
+                print('inside ingest loop')
                 self.ingest_injection_catalogs(
-                    si_input_collection=self.inject_cat_collection,
+                    si_input_collection=self.config['injection']['inject_cat_collection'],
                     catalogs=self.injection_cats,
                     bands=self.config["pipelines"]["bands"],
                 )
@@ -227,17 +228,19 @@ class CreateDwarfInjectionCatalog:
         bands : list
             The bands to ingest catalogs for.
         """
-        writeable_butler = Butler(self.repo, writeable=True)
+        writeable_butler = Butler(self.config['pipelines']['repo'], writeable=True)
+        import pdb; pdb.set_trace()
         try:
-            writeable_butler.removeRuns([si_input_collection])
+            writeable_butler.registry.queryCollections(si_input_collection)
+            # writeable_butler.removeRuns([si_input_collection])
         except MissingCollectionError:
             logger.info("Writing into a new RUN collection")
+            _ = writeable_butler.registry.registerCollection(
+                si_input_collection, type=CollectionType.RUN
+               )
             pass
         else:
             logger.info("Prior RUN collection located and successfully removed")
-        _ = writeable_butler.registry.registerCollection(
-            si_input_collection, type=CollectionType.RUN
-        )
 
         self.injection_cat_refs = {}
         for band in bands:

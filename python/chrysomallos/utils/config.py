@@ -55,7 +55,7 @@ default_dict = {
         "mag_limit_band": None,
         "replace_mag_limit": np.nan,
         "ingest": False,
-        "output_collection": None,
+        "inject_cat_collection": None,
         "type": None,  # either "grid" or "stamp"
     },
     "stamp": {
