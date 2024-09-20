@@ -144,7 +144,7 @@ class DwarfParamSampler:
         # import pdb; pdb.set_trace()
         self.dwarf_param_frame["inject_cat_collection"] = self.config["injection"][
             "inject_cat_collection_base"
-        ]+'/'+uuid_str
+        ]+'/inject_'+uuid_str
         # get mstar_from_absmag populate mstar
         self.dwarf_param_frame["stellar_mass"] = mstar_from_absmag(
             self.dwarf_param_frame["m_v"]
