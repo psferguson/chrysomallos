@@ -320,10 +320,11 @@ class DwarfParamSampler:
         # grab the wcs from the coadd
         first_band = self.config["pipelines"]["bands"][0]
         wcs = self.coadd_dict[first_band]["wcs"]
+        bbox = self.coadd_dict[first_band]["bbox"]
 
         ra, dec = wcs.pixelToSkyArray(
-            self.dwarf_param_frame["x_cen"].values,
-            self.dwarf_param_frame["y_cen"].values,
+            self.dwarf_param_frame["x_cen"].values + bbox.beginX,
+            self.dwarf_param_frame["y_cen"].values + bbox.beginY,
             degrees=True,
         )
         return ra, dec
