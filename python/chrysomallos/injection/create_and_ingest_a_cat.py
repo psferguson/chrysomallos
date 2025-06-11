@@ -48,7 +48,7 @@ class CreateDwarfInjectionCatalog:
                 f"can only run one patch at at time: {np.unique(dwarf_params_frame['patch'])}"
             )
 
-    def run(self, ingest=False, multiproc=False):
+    def run(self, ingest=False, multiproc=False, crop_to_stamp=False):
         """
         Executes the catalog creation and ingestion process.
 
@@ -80,25 +80,34 @@ class CreateDwarfInjectionCatalog:
                 self.injection_cats[band] = []
             for i, cat in enumerate(self.dwarf_cats):
                 for band in self.config["pipelines"]["bands"]:
-                    self.injection_cats[band].append(
-                        massage_the_cat(
-                            cat_inp=cat,
-                            replace_mag_limit=self.config["injection"][
-                                "replace_mag_limit"
-                            ],
-                            mag_limit_ref_band=self.config["injection"][
-                                "mag_limit_band"
-                            ],
-                            band_for_injection=band,
-                            wcs=self.coadd_dict[self.first_band]["wcs"],
-                            bbox=self.coadd_dict[self.first_band]["bbox"],
-                            x_cen=self.dwarf_params_frame["x_cen"][i],
-                            y_cen=self.dwarf_params_frame["y_cen"][i],
-                            r_scale=self.dwarf_params_frame["r_scale"][i],
-                            dist=self.dwarf_params_frame["dist"][i],
-                            theta=self.dwarf_params_frame["theta"][i],
-                            ellip=self.dwarf_params_frame["ellip"][i],
+                    injection_catalog =  massage_the_cat(
+                        cat_inp=cat,
+                        replace_mag_limit=self.config["injection"][
+                            "replace_mag_limit"
+                        ],
+                        mag_limit_ref_band=self.config["injection"][
+                            "mag_limit_band"
+                        ],
+                        band_for_injection=band,
+                        wcs=self.coadd_dict[self.first_band]["wcs"],
+                        bbox=self.coadd_dict[self.first_band]["bbox"],
+                        x_cen=self.dwarf_params_frame["x_cen"][i],
+                        y_cen=self.dwarf_params_frame["y_cen"][i],
+                        r_scale=self.dwarf_params_frame["r_scale"][i],
+                        dist=self.dwarf_params_frame["dist"][i],
+                        theta=self.dwarf_params_frame["theta"][i],
+                        ellip=self.dwarf_params_frame["ellip"][i],
+                    )
+                    if crop_to_stamp:
+                        injection_catalog = self.crop_catalog_to_stamp(
+                            injection_catalog,
+                            stamp_x_cen=self.config['stamp']['stamp_x_cen'][i],
+                            stamp_y_cen=self.config['stamp']['stamp_y_cen'][i],
+                            cutout_size_x=self.config['stamp']['size'][0],
+                            cutout_size_y=self.config['stamp']['size'][1],
                         )
+                    self.injection_cats[band].append(
+                        injection_catalog
                     )
             for band in self.config["pipelines"]["bands"]:
                 self.injection_cats[band] = atable.vstack(self.injection_cats[band])
@@ -122,13 +131,17 @@ class CreateDwarfInjectionCatalog:
 
             for i, cat in enumerate(self.dwarf_cats):
                 for band in self.config["pipelines"]["bands"]:
-                    self.injection_cats[band][i] = massage_the_cat(
+                    injection_catalog =  massage_the_cat(
                         cat_inp=cat,
-                        replace_mag_limit=self.config["injection"]["replace_mag_limit"],
-                        mag_limit_ref_band=self.config["injection"]["mag_limit_band"],
+                        replace_mag_limit=self.config["injection"][
+                            "replace_mag_limit"
+                        ],
+                        mag_limit_ref_band=self.config["injection"][
+                            "mag_limit_band"
+                        ],
                         band_for_injection=band,
-                        wcs=self.coadd_dict[band]["wcs"],
-                        bbox=self.coadd_dict[band]["bbox"],
+                        wcs=self.coadd_dict[self.first_band]["wcs"],
+                        bbox=self.coadd_dict[self.first_band]["bbox"],
                         x_cen=self.dwarf_params_frame["x_cen"][i],
                         y_cen=self.dwarf_params_frame["y_cen"][i],
                         r_scale=self.dwarf_params_frame["r_scale"][i],
@@ -136,6 +149,16 @@ class CreateDwarfInjectionCatalog:
                         theta=self.dwarf_params_frame["theta"][i],
                         ellip=self.dwarf_params_frame["ellip"][i],
                     )
+                    if crop_to_stamp:
+                        injection_catalog = self.crop_catalog_to_stamp(
+                            injection_catalog,
+                            stamp_x_cen=self.config['stamp']['stamp_x_cen'][i],
+                            stamp_y_cen=self.config['stamp']['stamp_y_cen'][i],
+                            cutout_size_x=self.config['stamp']['size'][0],
+                            cutout_size_y=self.config['stamp']['size'][1],
+                            )
+                    
+                    self.injection_cats[band][i] = injection_catalog
         else:
             raise Exception(
                 f"unknown injection type: {self.config['injection']['type']}"
@@ -248,3 +271,43 @@ class CreateDwarfInjectionCatalog:
                 output_collection=si_input_collection,
                 dataset_type_name="injection_catalog",
             )
+    def crop_catalog_to_stamp(self, catalog, stamp_x_cen, stamp_y_cen, cutout_size_x, cutout_size_y):
+        """
+        Crops a catalog to a specified stamp size.
+
+        Parameters
+        ----------
+        catalog : `astropy.table.Table`
+            The catalog to crop.
+        stamp_x_cen : int
+            The x center of the stamp.
+        stamp_y_cen : int
+            The y center of the stamp.
+        cutout_size_x : int
+            The width of the stamp.
+        cutout_size_y : int
+            The height of the stamp.
+
+        Returns
+        -------
+        `astropy.table.Table`
+            The cropped catalog.
+        """
+        # Implement cropping logic here
+        wcs = self.coadd_dict[self.first_band]["wcs"]
+        bbox = self.coadd_dict[self.first_band]["bbox"]
+        xy_coords = wcs.skyToPixelArray(catalog["ra"], catalog["dec"], degrees=True)
+        x_pix = xy_coords[0]
+        y_pix = xy_coords[1]
+        catsel = (x_pix > bbox.beginX) & (x_pix < bbox.endX) 
+        catsel &= (y_pix > bbox.beginY) & (y_pix < bbox.endY)
+        catsel &= (x_pix > stamp_x_cen - cutout_size_x / 2 + bbox.beginX) 
+        catsel &= (x_pix < stamp_x_cen + cutout_size_x / 2 + bbox.beginX)
+        catsel &= (y_pix > stamp_y_cen - cutout_size_y / 2 + bbox.beginY) 
+        catsel &= (y_pix < stamp_y_cen + cutout_size_y / 2 + bbox.beginY)
+        # if catsel.sum() < catsel.size:
+        #     logger.info(
+        #         f"cropped catalog has {catsel.sum()} entries, original had {len(catsel)}"
+        #     )
+        return catalog[catsel]
+

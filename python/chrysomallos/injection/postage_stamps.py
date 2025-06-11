@@ -8,8 +8,10 @@ import numpy as np
 import pandas as pd
 from astropy.visualization import make_lupton_rgb
 from tqdm import tqdm
+import lsst.geom as geom
+import lsst.afw.image as afw_image
 
-from chrysomallos.utils import logger
+from chrysomallos.utils import logger, get_coadd_dict
 from chrysomallos.utils.annotations import compute_central_density, get_anotation_box
 
 __all__ = [
@@ -22,7 +24,7 @@ class PostageStampGenerator:
     injectes dwarf galaxies into images and generates postage stamps of.
     """
 
-    def __init__(self, config, dwarf_params_frame, dwarf_catalogs, coadd_dict) -> None:
+    def __init__(self, config, dwarf_params_frame, dwarf_catalogs, coadd_dict=None) -> None:
         """
         Initializes the generator with configurations and necessary data structures.
 
@@ -34,7 +36,7 @@ class PostageStampGenerator:
         """
         self.config = config
         self.dwarf_catalogs = dwarf_catalogs
-        self.coadd_dict = coadd_dict
+        self.coadd_dict = get_coadd_dict(coadd_dict=coadd_dict, config=self.config)
         self.dwarf_params_frame = dwarf_params_frame
 
         # check that directory exists
@@ -42,7 +44,8 @@ class PostageStampGenerator:
 
         # make sure bands is a list with 3 elements
         bands = self.config["pipelines"]["bands"]
-        if len(self.config["pipelines"]["bands"]) != 3:
+        if  (len(self.config["pipelines"]["bands"]) != 3) &\
+            (self.config['stamp']['type'] != 'single_band') :
             raise ValueError(
                 f"3 bands must be specified for postage stamp generation : {bands}"
             )
@@ -50,6 +53,8 @@ class PostageStampGenerator:
     def run(self):
         if self.config["stamp"]["size"] == "full_patch":
             self.run_full_patch_stamps()
+        if self.config['stamp']['type'] == 'single_band':
+            self.run_single_band_stamps()
         else:
             self.run_cropped_stamps()
 
@@ -297,7 +302,106 @@ class PostageStampGenerator:
         logger.info(
             f"Time to create {title} with {cat_length} sources: {end_time - start_time: 0.2f} seconds"
         )
+    def run_single_band_stamps(self):
+        """
+        Executes the process of generating and saving postage stamps
+        where each stamp will be a single band fits file.
+        """
 
+        # setup injection task
+        inject_config = si.CoaddInjectConfig()
+        inject_task = si.CoaddInjectTask(config=inject_config)
+
+        stamp_x_size = self.config["stamp"]["size"][0]
+        stamp_y_size = self.config["stamp"]["size"][1]
+
+        first_band = self.config["pipelines"]["bands"][0]
+        output_exposure_dict = {}
+        
+        for band in self.config["pipelines"]["bands"]:
+            # for band in tqdm(self.config["pipelines"]["bands"]):
+            image = self.coadd_dict[band]["image"]
+            input_exposure = image.clone()
+            psf = self.coadd_dict[band]["psf"]
+            photo_calib = self.coadd_dict[band]["photo_calib"]
+            wcs = self.coadd_dict[band]["wcs"]
+            bbox = self.coadd_dict[band]["bbox"]
+
+            injection_catalogs = []
+            cat_length = 0
+            for i in range(self.config["sampling"]["n_dwarfs"]):
+                # number of sources we are injecting
+                cat_length += len(self.dwarf_catalogs[band][i])
+
+                stamp_x_cen = self.config['stamp']["stamp_x_cen"][i]
+                stamp_y_cen = self.config['stamp']["stamp_y_cen"][i]
+
+                #
+
+                # crop injection catalog to stamp size
+                injection_catalog = self.crop_injection_catalog(
+                    catalog=self.dwarf_catalogs[band][i],
+                    band=band,
+                    x_cen=stamp_x_cen,
+                    y_cen=stamp_y_cen,
+                    stamp_x_size=stamp_x_size,
+                    stamp_y_size=stamp_y_size,
+                )
+
+                if ~np.isin("n", injection_catalog.colnames):
+                    injection_catalog.rename_column("n_sersic", "n")
+
+                injection_catalogs.append(injection_catalog)
+            if sum([len(i) for i in injection_catalogs]) == 0:
+                exposure = input_exposure
+                logger.info(f'no sources to inject in {band}-band,'
+                            f'tract {self.config["pipelines"]["tract"]} '
+                            f'patch {self.config["pipelines"]["patch"]} ')
+            else:
+                inject_output = inject_task.run(
+                    injection_catalogs=injection_catalogs,
+                    input_exposure=input_exposure,
+                    psf=psf,
+                    photo_calib=photo_calib,
+                    wcs=wcs,
+                )
+                exposure = inject_output.output_exposure 
+
+            output_exposure_dict[band] = exposure
+            # could save into a dict here then save everything to a fits file at the end
+            # with one band per extension plus the masks
+        output_stamp_dict = {str(i):{} for i in range(self.config["sampling"]["n_dwarfs"])}
+        
+        for band in self.config["pipelines"]["bands"]:
+            bbox= self.coadd_dict[band]["bbox"]
+            exposure = output_exposure_dict[band]
+
+            for i in range(self.config["sampling"]["n_dwarfs"]):
+                stamp_x_cen = self.config['stamp']["stamp_x_cen"][i]
+                stamp_y_cen = self.config['stamp']["stamp_y_cen"][i]
+                stamp_x_min = stamp_x_cen - int(stamp_x_size / 2) + bbox.beginX
+                stamp_y_min = stamp_y_cen - int(stamp_y_size / 2) + bbox.beginY
+                stamp_bbox = geom.Box2I(geom.Point2I(stamp_x_min, stamp_y_min), 
+                                    geom.Extent2I(stamp_x_size, stamp_y_size))
+                stamp_image = exposure.Factory(exposure, stamp_bbox, afw_image.PARENT)
+                mask = stamp_image.getMask()
+                stamp_image_array = self.mask_image(
+                    stamp_image,
+                    mask,
+                    mask_fill_value=self.config["stamp"]["mask_value"],
+                )
+                output_stamp_dict[str(i)][band] = stamp_image_array
+        logger.info(f"Saving {self.config['sampling']['n_dwarfs']} stamps")
+        for band in self.config["pipelines"]["bands"]:
+            for i in range(self.config["sampling"]["n_dwarfs"]):
+                stamp_dir = self.config["stamp"]["directory"] 
+                os.makedirs(stamp_dir, exist_ok=True)
+                stamp_title_prefix=self.config["stamp"]["title_format"] 
+                filename = stamp_dir + stamp_title_prefix
+                filename += f"_{self.config['stamp']['stamp_indexes'][i]}"
+                filename += f"_band_{band}.fits"
+                fitsio.write(filename, output_stamp_dict[str(i)][band], clobber=True)
+    
     def crop_injection_catalog(
         self, catalog, band, x_cen, y_cen, stamp_x_size, stamp_y_size
     ):
@@ -454,7 +558,22 @@ class PostageStampGenerator:
         fits.write(array_list, names=names, clobber=True)
         fits.close()
 
-    def generate_empty_stamps(self, n_stamps):
+    def mask_image(self, image, mask, mask_strings=['BAD', 'INTRP', 'NO_DATA'], mask_fill_value=0):
+        image_array = image.image.array.copy()
+        mask_sel = None
+        for mstring in mask_strings:
+            if mask_sel is None:
+                mask_sel = np.where(np.bitwise_and(mask.array,mask.getPlaneBitMask(mstring)), True, False)
+            else:
+                mask_sel |= np.where(np.bitwise_and(mask.array,mask.getPlaneBitMask(mstring)), True, False)
+                
+        image_array[mask_sel]=mask_fill_value
+        return image_array
+
+    def generate_empty_stamps(self, n_stamps, 
+                              stamp_x_cens=None, 
+                              stamp_y_cens=None,
+                              stamp_indexes=None):
         """
         Generates a specified number of empty postage stamps.
 
@@ -465,64 +584,47 @@ class PostageStampGenerator:
             return
         stamp_x_size = self.config["stamp"]["size"][0]
         stamp_y_size = self.config["stamp"]["size"][1]
-        tract = self.config["pipelines"]["tract"]
-        patch = self.config["pipelines"]["patch"]
-        first_band = self.config["pipelines"]["bands"][0]
-        wcs = self.coadd_dict[first_band]["wcs"]
 
-        fig, ax = self.create_axes_for_stamps(
-            stamp_x_size=stamp_x_size, stamp_y_size=stamp_y_size, dpi=100
-        )
-        x_cen = np.random.uniform(
-            self.config["sampling"]["params"]["x_cen"][0],
-            self.config["sampling"]["params"]["x_cen"][1],
-            n_stamps,
-        )
-        y_cen = np.random.uniform(
-            self.config["sampling"]["params"]["y_cen"][0],
-            self.config["sampling"]["params"]["y_cen"][1],
-            n_stamps,
-        )
-        # get ra/dec from wcs
-        ra, dec = wcs.pixelToSkyArray(x_cen, y_cen, degrees=True)
-        for i in range(n_stamps):
-            injection_dict = {}
-
-            for band in self.config["pipelines"]["bands"]:
-                # make title
-                title = (
-                    self.config["stamp"]["directory"]
-                    + f"empty_stamp_{tract}_{patch}_{i}_{ra[i]: 0.2f}_{dec[i]: 0.2f}.png"
-                )
-
-                # stamp parameters
-                minx = self.coadd_dict[band]["bbox"].beginX
-                miny = self.coadd_dict[band]["bbox"].beginY
-                stamp_range = [
-                    minx + x_cen[i] - int(stamp_x_size / 2),
-                    minx + x_cen[i] + int(stamp_x_size / 2),
-                    miny + y_cen[i] - int(stamp_y_size / 2),
-                    miny + y_cen[i] + int(stamp_y_size / 2),
-                ]
-
-                injection_dict[band] = (
-                    self.coadd_dict[band]["image"]
-                    .clone()
-                    .image[
-                        stamp_range[0] : stamp_range[1], stamp_range[2] : stamp_range[3]
-                    ]
-                    .array
-                )
-
-            self.make_one_stamp_png(
-                injection_dict=injection_dict,
-                title=title,
-                Q=self.config["stamp"]["Q"],
-                stretch=self.config["stamp"]["stretch"],
-                minimum=self.config["stamp"]["minimum"],
-                bands=self.config["pipelines"]["bands"],
-                ax=ax,
+        if stamp_x_cens is None and stamp_y_cens is None:
+            stamp_x_cens = np.random.uniform(
+                self.config["sampling"]["params"]["x_cen"][0],
+                self.config["sampling"]["params"]["x_cen"][1],
+                n_stamps,
             )
+            stamp_y_cens = np.random.uniform(
+                self.config["sampling"]["params"]["y_cen"][0],
+                self.config["sampling"]["params"]["y_cen"][1],
+                n_stamps,
+            )
+        
+        # get ra/dec from wcs
+        
+        #ra, dec = wcs.pixelToSkyArray(stamp_x_cens, stamp_y_cens, degrees=True)
+        logger.info(f"making {len(stamp_x_cens)} empty stamps")
+        for band in self.config["pipelines"]["bands"]:
+            bbox = self.coadd_dict[band]["bbox"]
+            exposure = self.coadd_dict[band]["image"].clone()
+            for i in range(len(stamp_x_cens)):
+                stamp_x_cen = stamp_x_cens[i]
+                stamp_y_cen = stamp_y_cens[i]
+                stamp_x_min = stamp_x_cen - int(stamp_x_size / 2) + bbox.beginX
+                stamp_y_min = stamp_y_cen - int(stamp_y_size / 2) + bbox.beginY
+                stamp_bbox = geom.Box2I(geom.Point2I(stamp_x_min, stamp_y_min), 
+                                    geom.Extent2I(stamp_x_size, stamp_y_size))
+                stamp_image = exposure.Factory(exposure, stamp_bbox, afw_image.PARENT)
+                mask = stamp_image.getMask()
+                output_stamp = self.mask_image(
+                    stamp_image,
+                    mask,
+                    mask_fill_value=self.config["stamp"]["mask_value"],
+                )
+                stamp_dir = self.config["stamp"]["directory"] + "/empty_stamps/" 
+                os.makedirs(stamp_dir, exist_ok=True)
+                stamp_title_prefix=self.config["stamp"]["title_format"] 
+                filename = stamp_dir + stamp_title_prefix
+                filename += f"_{stamp_indexes[i]}"
+                filename += f"_band_{band}.fits"
+                fitsio.write(filename, output_stamp, clobber=True)
 
     def generate_empty_stamps_full_patch(self, n_stamps, gen_id):
         """

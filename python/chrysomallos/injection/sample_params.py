@@ -129,7 +129,12 @@ class DwarfParamSampler:
         )
         self.dwarf_param_frame["tract"] = self.config["pipelines"]["tract"]
         self.dwarf_param_frame["patch"] = self.config["pipelines"]["patch"]
-        self.dwarf_param_frame["id"] = self.dwarf_param_frame.index
+        if self.config['stamp']['stamp_indexes'] is not None:
+            self.dwarf_param_frame["id"] = self.config['stamp']['stamp_indexes']
+        else:
+            self.dwarf_param_frame["id"] = self.dwarf_param_frame.index
+
+
         self.dwarf_param_frame["dwarf_generation_id"] = self.config["sampling"][
             "generation_id"
         ]
@@ -174,11 +179,11 @@ class DwarfParamSampler:
         elif isinstance(param, list):
             if param[-1] == "linear":
                 data = self.linear(param[0], param[1], n_dwarfs)
-            if param[-1] == "loglinear":
+            elif param[-1] == "loglinear":
                 data = self.loglinear(param[0], param[1], n_dwarfs)
             elif param[-1] == "grid":
                 data = self.grid(param[0], param[1], param[2], param[3], n_dwarfs)
-            elif all(isinstance(item, (float, int)) for item in param):
+            elif all(isinstance(item, (float, int, np.int64)) for item in param):
                 data = np.zeros(n_dwarfs)
                 for i in range(n_dwarfs):
                     data[i] = param[i % len(param)]

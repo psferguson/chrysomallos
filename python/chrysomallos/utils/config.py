@@ -56,7 +56,7 @@ default_dict = {
         "replace_mag_limit": np.nan,
         "ingest": False,
         "output_collection": None,
-        "type": None,  # either "grid" or "stamp"
+        "type": None,  # either "grid" or "stamp" or "single_band_stamp"
     },
     "stamp": {
         "annotation": False,
@@ -69,6 +69,10 @@ default_dict = {
         "stretch": 0.5,
         "minimum": 0,
         "n_empty": 0,
+        "mask_value": None,
+        "type": None,
+        "stamp_x_cen": None,
+        "stamp_y_cen": None,
     },
 }
 
