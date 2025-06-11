@@ -1,7 +1,8 @@
 import argparse
-
+import chrysomallos
 from chrysomallos.injection import DwarfParamSampler
 from chrysomallos.utils import Config, logger
+
 
 if __name__ == "__main__":
     """
@@ -26,7 +27,9 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
     if args.config is None:
-        config_dict = "./python/chrysomallos/config/example_stamps.yaml"
+        from pathlib import Path
+        basedir = Path(chrysomallos.__file__).parent.resolve()
+        config_dict = str(basedir / "config/example_stamps.yaml")
     else:
         config_dict = args.config
 
