@@ -22,6 +22,7 @@ default_dict = {
         "skymap": None,
         "tract": np.nan,
         "patch": np.nan,
+        "dataset_type": "deepCoadd_calexp",
     },
     "sampling": {
         # sample or grid

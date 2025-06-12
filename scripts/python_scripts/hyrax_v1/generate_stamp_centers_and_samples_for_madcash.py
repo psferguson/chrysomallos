@@ -50,7 +50,7 @@ def get_stamp_centers(tract, patch, butler, cutout_size_x=600, cutout_size_y=600
     ras = []
     decs = []
     for x_cen, y_cen in zip(x_cens, y_cens):
-        pixel = geom.Point2D(x_cen, y_cen)
+        pixel = geom.Point2D(x_cen + bbox.beginX, y_cen + bbox.beginY)
         sky = wcs.pixelToSky(pixel)
         ras.append(sky.getRa().asDegrees())
         decs.append(sky.getDec().asDegrees())
@@ -85,9 +85,15 @@ if __name__ == "__main__":
     repo = "/Volumes/gimli/hsc_data/repo/"
     butler = Butler(repo)
     registry = butler.registry
-
-    coadd_refs = sorted(registry.queryDatasets('deepCoadd_calexp', collections = ['HSC/madcash/ngc4214_4244', 'HSC/calib/madcash/ngc247']))
-
+    injected = False  # Set to True if you want to use injected data, False for regular data
+    if injected:
+        coadd_refs = sorted(registry.queryDatasets('injected_deepCoadd', collections = ['HSC/madcash/ngc4214_4244/inject_dwarfs_round1/injected_meas']))
+        patch_df_filename = '/Users/pferguson/projects/dwarf_finder/data/madcash/run_v2_tract_patch_centers_injected.csv'
+        injection_df_filename = '/Users/pferguson/projects/dwarf_finder/data/madcash/run_v2_stamp_centers_injected.csv'
+    else: 
+        coadd_refs = sorted(registry.queryDatasets('deepCoadd_calexp', collections = ['HSC/madcash/ngc4214_4244', 'HSC/calib/madcash/ngc247']))
+        patch_df_filename = '/Users/pferguson/projects/dwarf_finder/data/madcash/run_v2_tract_patch_centers_injected.csv'
+        injection_df_filename = '/Users/pferguson/projects/dwarf_finder/data/madcash/run_v2_stamp_centers_injected.csv'
     skymap = butler.get("skyMap", dataId={'skymap':'hsc_rings_v1'}, collections=['skymaps'])
     # Extract tracts and patches
     tracts_patches = set([(i.dataId['tract'], i.dataId['patch']) for i in coadd_refs])
@@ -110,7 +116,7 @@ if __name__ == "__main__":
         'ra': ras,
         'dec': decs
     })
-    patch_df.to_csv('/Users/pferguson/projects/dwarf_finder/data/madcash/tract_patch_centers.csv', index=False)
+    patch_df.to_csv(patch_df_filename, index=False)
     
     #create_injection_df
     injection_dfs = []
@@ -120,5 +126,5 @@ if __name__ == "__main__":
         injection_dfs.extend(results)
     
     injection_df = pd.concat(injection_dfs, ignore_index=True)
-    injection_df.to_csv('/Users/pferguson/projects/dwarf_finder/data/madcash/run_v2_stamp_centers.csv', index=False)
+    injection_df.to_csv(injection_df_filename, index=False)
 

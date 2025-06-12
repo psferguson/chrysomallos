@@ -1,0 +1,54 @@
+# this config is intended to be used with the genrate_stamps_hyrax_v1.py script
+injection:
+  dwarfs: null
+  ingest: false
+  mag_limit_band: LSST_g
+  inject_mag_limit: 36
+  replace_mag_limit: 29
+  type: stamp # using grid so that catalogs are concatenated per patch
+
+pipelines:
+  bands: ['g','i']
+  input_collections: ['HSC/madcash/ngc4214_4244/inject_dwarfs_round1/injected_meas']
+  patch: None
+  repo: /Volumes/gimli/hsc_data/repo/
+  skymap: hsc_rings_v1
+  tract: None
+  dataset_type: injected_deepCoadd_calexp
+sampling:
+  generation_id: null
+  n_dwarfs: None
+  params:
+    age: 10
+    dec: null
+    dist: [3.4,3.6,'linear'] # distance in Mpc
+    ellip: [0,0.5, 'linear']
+    feh: -2.0
+    m_v: [-10,-5,'linear'] # this should go to -11
+    r_scale: [1,3, 'loglinear']
+    ra: null
+    n_sersic: 1
+    theta: [0,180,'linear']
+    stellar_mass: null
+    surface_brightness: null #[24,28,'linear'] # 24 to 28
+    x_cen: None
+    y_cen: None
+    random_seed_injection: null
+  output_file: None
+  output_directory: /Volumes/gimli/hsc_pdr3/pferguson/dwarf_finder/data/hyrax_v1/dwarf_params/
+  random_seed_sampling: null
+  type: sample
+stamp:
+  type: single_band
+  annotation: False
+  annotation_scaling: None
+  version: 2
+  directory: /Volumes/gimli/hsc_pdr3/pferguson/dwarf_finder/data/madcash/stamps_injected/ # dont forget the trailing slash
+  size: [600,600]
+  title_format: None 
+  Q: None
+  stretch: None
+  minimum:  None
+  mask_value: 0
+  n_empty: 0
+  

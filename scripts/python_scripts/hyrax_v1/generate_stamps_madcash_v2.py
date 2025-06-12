@@ -13,6 +13,12 @@ from chrysomallos.injection import (
 from chrysomallos.utils import Config
 from chrysomallos.utils.annotations import get_anotation_box
 
+from lsst.daf.butler import Butler
+import lsst.geom as geom
+from lsst.geom import Point2D
+import lsst.sphgeom
+from lsst.sphgeom import UnitVector3d, Angle
+
 # Limit the number of threads for NumPy, OpenBLAS, MKL, etc.
 os.environ["OMP_NUM_THREADS"] = "1"  # OpenMP
 os.environ["OPENBLAS_NUM_THREADS"] = "1"  # OpenBLAS
@@ -33,7 +39,7 @@ def run_single_config(args):
     single_config['sampling']['n_dwarfs'] = len(injection_frame)
     config["sampling"]["generation_id"] = np.random.randint(0, 1000000)
     version = config["stamp"]["version"]
-    config["stamp"]["title_format"] = f"madcash_stamp_v{version}"
+    config["stamp"]["title_format"] = f"madcash_stamp_v{version}_injected"
     x_injects = injection_frame['x_cen'].values.copy()
     y_injects = injection_frame['y_cen'].values.copy()
     x_injects += np.random.randint(-injection_frame['cutout_size_x'].values//2, injection_frame['cutout_size_x'].values//2, len(injection_frame))
@@ -136,11 +142,70 @@ def run_configs(manifest_frame, config_dict, multiproc=False):
         for args in tqdm(gen_args, desc="Processing (single process)"):
             run_single_config(args)
 
+def only_keep_stamps_w_injections(manifest_frame, injection_frame, skymap):
+    """
+    Filters the manifest frame to only keep stamps with injections.
+    """
+    uniq_tract_patch = np.unique(list(zip(manifest_frame['tract'], manifest_frame['patch'])), axis=0)
+    row = manifest_frame.iloc[0]
+    stamps_to_make = []
+    for tract_num, patch_num in uniq_tract_patch:
+        sub_manifest_frame = manifest_frame[(manifest_frame['tract']==tract_num) & (manifest_frame['patch']==patch_num)]
+        sub_injection_frame = injection_frame[(injection_frame["tract"]==tract_num) & (injection_frame['patch']==patch_num)]
+        if (len(sub_manifest_frame)==0) | (len(sub_injection_frame)==0):
+            continue
+            
+
+        tract = skymap.generateTract(tract_num)
+        patch_info = tract.getPatchInfo(patch_num)
+        bbox = patch_info.getInnerBBox()
+        wcs = tract.getWcs()
+        ras = sub_injection_frame["ra_correct"].values
+        decs = sub_injection_frame["dec_correct"].values
+        unit_vecs = [UnitVector3d(Angle(np.deg2rad(ra)), Angle(np.deg2rad(dec))) for ra,dec in zip(ras,decs)]
+        for i,row in sub_manifest_frame.iterrows():
+            pixel_poly_x = np.array([
+                row["x_cen"] + bbox.beginX - row['cutout_size_x'],
+                row["x_cen"] + bbox.beginX + row['cutout_size_x'],
+                row["x_cen"] + bbox.beginX + row['cutout_size_x'],
+                row["x_cen"] + bbox.beginX - row['cutout_size_x']
+            ])
+            pixel_poly_y = np.array([
+                row["y_cen"] + bbox.beginY - row['cutout_size_y'],
+                row["y_cen"] + bbox.beginY - row['cutout_size_y'],
+                row["y_cen"] + bbox.beginY + row['cutout_size_y'],
+                row["y_cen"] + bbox.beginY + row['cutout_size_y']
+            ])
+            pixel_coords = [Point2D(x,y) for x,y in zip(pixel_poly_x, pixel_poly_y)]
+            sky_coords = wcs.pixelToSky(pixel_coords)
+            unit_vecs_stamp = [UnitVector3d(sp[0], sp[1]) for sp in sky_coords]
+            polygon = lsst.sphgeom.ConvexPolygon(unit_vecs_stamp)
+            if np.any([polygon.contains(unit_vec) for unit_vec in unit_vecs]):
+                stamps_to_make.append(row['stamp_index'])
+    sel = np.isin(manifest_frame['stamp_index'], stamps_to_make)
+    manifest_frame = manifest_frame[sel].reset_index(drop=True)
+    return manifest_frame
 
 if __name__ == "__main__":
     main_dir = '/Volumes/gimli/hsc_pdr3/pferguson/dwarf_finder/'
     config_dict = "./madcash_v2_config.yaml"
+    injected = True # true for when we are just creating cutouts for the preinjected dwarfs
     
-    manifest_frame_path = main_dir + 'data/madcash/run_v2_stamp_centers.csv'
-    manifest_frame = pd.read_csv(manifest_frame_path)
+    if injected: 
+        config_dict = "./madcash_v2_injected_config.yaml"
+        butler = Butler("/Volumes/gimli/hsc_data/repo", collections=["HSC/madcash/ngc4214_4244"])
+        skymap = butler.get("skyMap", dataId={'skymap':'hsc_rings_v1'}, collections=["HSC/madcash/ngc4214_4244"])
+        manifest_frame_path = main_dir + 'data/madcash/run_v2_stamp_centers_injected.csv'
+        manifest_frame = pd.read_csv(manifest_frame_path)
+        initial_l=len(manifest_frame)
+        # compare with 
+        injection_frame = pd.read_csv(main_dir + "data/madcash/ngc4214_4244_fakedwarf_properties_CORRECT_radec.csv")
+        print("Filtering stamps to only keep those with injections")
+        manifest_frame = only_keep_stamps_w_injections(manifest_frame, injection_frame, skymap)
+        print(f"creating {len(manifest_frame)} stamps that contain injections from {initial_l} initial stamps")
+    else:
+        manifest_frame_path = main_dir + 'data/madcash/run_v2_stamp_centers.csv'
+        manifest_frame = pd.read_csv(manifest_frame_path)
+    
+    
     run_configs(manifest_frame, config_dict, multiproc=15)
