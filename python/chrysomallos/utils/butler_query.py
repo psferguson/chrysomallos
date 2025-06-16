@@ -28,7 +28,7 @@ def get_data_ids(tract, patch, bands, skymap="hsc_rings_v1"):
     return data_id_dict
 
 
-def get_coadds(butler, data_id_dict, bands):
+def get_coadds(butler, data_id_dict, bands, dataset_type="deepCoadd_calexp"):
     """
     Retrieves coadded images and related data from the Butler repository.
 
@@ -43,7 +43,7 @@ def get_coadds(butler, data_id_dict, bands):
     # TODO: double check deepCoadd_calexp vs deepCoadd
     coadd_dict = {band: {} for band in bands}
     for band in bands:
-        image = butler.get("deepCoadd_calexp", dataId=data_id_dict[band])
+        image = butler.get(dataset_type, dataId=data_id_dict[band])
         coadd_dict[band]["image"] = image
         coadd_dict[band]["wcs"] = image.getWcs()
         coadd_dict[band]["bbox"] = image.getBBox()
@@ -78,6 +78,9 @@ def get_coadd_dict(coadd_dict, config):
         )
         # grab deepCoaddd
         coadd_dict = get_coadds(
-            butler=butler, data_id_dict=data_id_dict, bands=config["pipelines"]["bands"]
+            butler=butler, 
+            data_id_dict=data_id_dict, 
+            bands=config["pipelines"]["bands"],
+            dataset_type=config["pipelines"]["dataset_type"],
         )
     return coadd_dict

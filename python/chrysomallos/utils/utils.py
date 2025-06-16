@@ -251,6 +251,10 @@ def rh_mv_to_sb(rh, M_v, dist):
     From an input surface brightness and half-light radius, calculate
     the absolute magnitude. Assumes a circular dwarf (i.e., radius, not a).
 
+    The factor 2 in the sb equation below accounts for the fact that
+    we are taking half the luminosity within the half-light
+    radius.
+
     Parameters
     ----------
     rh : `float`, pc
@@ -263,7 +267,7 @@ def rh_mv_to_sb(rh, M_v, dist):
     Returns
     -------
     sb : `float`, mag/arcsec**2
-        Surface brightness within r_half (in mag/arcsec**2) of the satellite
+        Surface brightness (in mag/arcsec**2) of the satellite
 
     """
 
@@ -271,7 +275,7 @@ def rh_mv_to_sb(rh, M_v, dist):
     r_over_d_arcsec = np.rad2deg(r_over_d_radians) * 3600.0
     area_arcsec = np.pi * (r_over_d_arcsec**2)
     mv = M_v + 5.0 * np.log10(dist) - 5.0
-    sb = mv + 2.5 * np.log10(area_arcsec)
+    sb = mv + 2.5 * np.log10(area_arcsec) + 2.5 * np.log10(2.0)
 
     return sb
 
@@ -300,7 +304,8 @@ def sb_rh_to_mv(sb, rh, dist):
     r_over_d_radians = rh / dist
     r_over_d_arcsec = np.rad2deg(r_over_d_radians) * 3600.0
     area_arcsec = np.pi * (r_over_d_arcsec**2)
-    m_v = sb - 2.5 * np.log10(area_arcsec)
+    sb_half = sb - 2.5 * np.log10(2.0)
+    m_v = sb_half - 2.5 * np.log10(area_arcsec)
     M_V = m_v - 5.0 * np.log10(dist) + 5.0
     return M_V
 
@@ -326,7 +331,8 @@ def sb_mv_to_rh(sb, M_v, dist):
 
     """
     m_v = M_v + 5.0 * np.log10(dist) - 5.0
-    rh_over_dist_arcsec = np.sqrt((10.0 ** ((sb - m_v) / 2.5)) / np.pi)
+    sb_half = sb - 2.5 * np.log10(2.0)
+    rh_over_dist_arcsec = np.sqrt((10.0 ** ((sb_half - m_v) / 2.5)) / np.pi)
     rh_over_dist_deg = rh_over_dist_arcsec / 3600.0
     rh_over_dist_rad = np.deg2rad(rh_over_dist_deg)
     rh = rh_over_dist_rad * dist
